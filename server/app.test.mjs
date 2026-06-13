@@ -139,6 +139,39 @@ test('read endpoints expose models, usage, billing, and docs', async () => {
   });
 });
 
+test('billing recharge updates account balance and records transaction', async () => {
+  await withServer(async (baseUrl) => {
+    const before = await request(baseUrl, '/api/account');
+    const recharge = await request(baseUrl, '/api/billing/recharge', {
+      method: 'POST',
+      body: JSON.stringify({ amount: 200 })
+    });
+
+    assert.equal(recharge.response.status, 201);
+    assert.equal(recharge.body.account.balance, Number((before.body.balance + 200).toFixed(2)));
+    assert.equal(recharge.body.record.type, 'recharge');
+    assert.equal(recharge.body.record.amount, 200);
+
+    const billing = await request(baseUrl, '/api/billing');
+    assert.equal(billing.body[0].id, recharge.body.record.id);
+
+    const after = await request(baseUrl, '/api/account');
+    assert.equal(after.body.balance, recharge.body.account.balance);
+  });
+});
+
+test('billing recharge validates amount range', async () => {
+  await withServer(async (baseUrl) => {
+    const result = await request(baseUrl, '/api/billing/recharge', {
+      method: 'POST',
+      body: JSON.stringify({ amount: 5 })
+    });
+
+    assert.equal(result.response.status, 400);
+    assert.equal(result.body.error.code, 'validation_error');
+  });
+});
+
 test('channels can be toggled persistently', async () => {
   await withServer(async (baseUrl) => {
     const updated = await request(baseUrl, '/api/channels/channel_openai_primary', {

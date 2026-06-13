@@ -403,6 +403,7 @@ pre {
 .marketing-links,
 .hero-actions,
 .hero-stats,
+.quick-amounts,
 .console-toolbar,
 .logo-strip,
 .pricing-card p,
@@ -466,6 +467,12 @@ pre {
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 28px;
+}
+
+.quick-amounts {
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 
 .hero-actions .button-primary,

@@ -72,5 +72,12 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status })
     });
+  },
+
+  rechargeBalance(amount: number) {
+    return request<{ account: Account; record: BillingRecord }>('/api/billing/recharge', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
   }
 };

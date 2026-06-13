@@ -76,6 +76,20 @@ export default function App() {
     return channel;
   };
 
+  const rechargeBalance = async (amount: number) => {
+    const result = await api.rechargeBalance(amount);
+    setConsoleState((current) =>
+      current
+        ? {
+            ...current,
+            account: result.account,
+            billingRecords: [result.record, ...current.billingRecords]
+          }
+        : current
+    );
+    return result;
+  };
+
   return (
     <>
       <Routes>
@@ -125,7 +139,14 @@ export default function App() {
                   <Route path="/usage" element={<UsagePage models={consoleState.models} usageSeries={consoleState.usageSeries} />} />
                   <Route
                     path="/billing"
-                    element={<BillingPage account={consoleState.account} billingRecords={consoleState.billingRecords} />}
+                    element={
+                      <BillingPage
+                        account={consoleState.account}
+                        billingRecords={consoleState.billingRecords}
+                        rechargeBalance={rechargeBalance}
+                        pushToast={pushToast}
+                      />
+                    }
                   />
                   <Route path="/docs" element={<DocsPage docsExamples={consoleState.docsExamples} pushToast={pushToast} />} />
                   <Route path="*" element={<Navigate to="/overview" replace />} />

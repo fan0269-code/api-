@@ -100,6 +100,24 @@ beforeEach(() => {
         return jsonResponse(apiState.billingRecords);
       }
 
+      if (method === 'POST' && url.pathname === '/api/billing/recharge') {
+        const amount = Number(body.amount);
+        if (!Number.isFinite(amount) || amount < 10 || amount > 10000) {
+          return jsonResponse({ error: { code: 'validation_error', message: 'amount must be between 10 and 10000' } }, 400);
+        }
+        apiState.account.balance = Number((apiState.account.balance + amount).toFixed(2));
+        const record = {
+          id: 'bill_recharge_test',
+          date: '2026-06-13',
+          type: 'recharge' as const,
+          description: '账户余额充值',
+          amount,
+          balanceAfter: apiState.account.balance
+        };
+        apiState.billingRecords = [record, ...apiState.billingRecords];
+        return jsonResponse({ account: apiState.account, record }, 201);
+      }
+
       if (method === 'GET' && url.pathname === '/api/docs/examples') {
         return jsonResponse(apiState.docsExamples);
       }
@@ -294,7 +312,7 @@ describe('usage billing and docs', () => {
     expect(screen.getByText('没有匹配的用量数据')).toBeInTheDocument();
   });
 
-  it('shows low balance warning and docs examples', async () => {
+  it('recharges balance and shows docs examples', async () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
         <App />
@@ -306,6 +324,14 @@ describe('usage billing and docs', () => {
     await userEvent.click(screen.getByRole('button', { name: '登录' }));
     await userEvent.click(await screen.findByRole('link', { name: '账单余额' }));
     expect(screen.getByText('余额低于预警阈值')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '充值入口' }));
+    await userEvent.clear(screen.getByLabelText('充值金额'));
+    await userEvent.type(screen.getByLabelText('充值金额'), '200');
+    await userEvent.click(screen.getByRole('button', { name: '确认充值' }));
+
+    expect(await screen.findByText('已充值 ¥200.00')).toBeInTheDocument();
+    expect(screen.getAllByText('¥328.60').length).toBeGreaterThan(0);
+    expect(screen.getByText('账户余额充值')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('link', { name: '接入文档' }));
     expect(screen.getByText('curl')).toBeInTheDocument();

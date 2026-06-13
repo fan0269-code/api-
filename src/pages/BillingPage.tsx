@@ -1,8 +1,37 @@
-import { MetricCard, SectionHeader } from '../components/ui';
-import type { Account, BillingRecord } from '../types';
+import { useState } from 'react';
+import { MetricCard, Modal, SectionHeader } from '../components/ui';
+import type { Account, BillingRecord, ToastMessage } from '../types';
 
-export function BillingPage({ account, billingRecords }: { account: Account; billingRecords: BillingRecord[] }) {
+const quickAmounts = [100, 200, 500];
+
+export function BillingPage({
+  account,
+  billingRecords,
+  rechargeBalance,
+  pushToast
+}: {
+  account: Account;
+  billingRecords: BillingRecord[];
+  rechargeBalance: (amount: number) => Promise<{ account: Account; record: BillingRecord }>;
+  pushToast: (kind: ToastMessage['kind'], text: string) => void;
+}) {
   const isLow = account.balance < account.lowBalanceThreshold;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [amount, setAmount] = useState('200');
+  const [error, setError] = useState('');
+
+  const submitRecharge = async () => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 10 || value > 10000) {
+      setError('充值金额需在 10 到 10000 之间');
+      return;
+    }
+
+    await rechargeBalance(value);
+    setError('');
+    setIsModalOpen(false);
+    pushToast('success', `已充值 ¥${value.toFixed(2)}`);
+  };
 
   return (
     <section className="page-grid">
@@ -10,7 +39,7 @@ export function BillingPage({ account, billingRecords }: { account: Account; bil
         eyebrow="Billing"
         title="账单余额"
         action={
-          <button className="button-secondary" type="button" title="原型占位，不连接支付">
+          <button className="button-primary" type="button" onClick={() => setIsModalOpen(true)}>
             充值入口
           </button>
         }
@@ -25,7 +54,7 @@ export function BillingPage({ account, billingRecords }: { account: Account; bil
       {isLow ? (
         <article className="card warning-card">
           <strong>余额低于预警阈值</strong>
-          <p>当前余额低于 ¥{account.lowBalanceThreshold.toFixed(2)}。这只是原型提示，充值按钮不连接真实支付。</p>
+          <p>当前余额低于 ¥{account.lowBalanceThreshold.toFixed(2)}。可以通过充值入口增加演示余额并生成账单记录。</p>
         </article>
       ) : null}
 
@@ -55,6 +84,42 @@ export function BillingPage({ account, billingRecords }: { account: Account; bil
           </tbody>
         </table>
       </div>
+
+      {isModalOpen ? (
+        <Modal
+          title="账户充值"
+          onClose={() => setIsModalOpen(false)}
+          footer={
+            <>
+              <button className="button-secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                取消
+              </button>
+              <button className="button-primary" type="button" onClick={submitRecharge}>
+                确认充值
+              </button>
+            </>
+          }
+        >
+          <div className="quick-amounts" aria-label="快捷充值金额">
+            {quickAmounts.map((value) => (
+              <button className="button-secondary" type="button" key={value} onClick={() => setAmount(String(value))}>
+                ¥{value}
+              </button>
+            ))}
+          </div>
+          <div className="form-field">
+            <label htmlFor="rechargeAmount">充值金额</label>
+            <input
+              id="rechargeAmount"
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="输入 10 到 10000"
+            />
+            {error ? <span className="field-error">{error}</span> : null}
+          </div>
+        </Modal>
+      ) : null}
     </section>
   );
 }

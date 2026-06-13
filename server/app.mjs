@@ -402,6 +402,33 @@ async function handleApi(req, res, store) {
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/api/billing/recharge') {
+    const body = await readBody(req);
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount < 10 || amount > 10000) {
+      sendError(res, 400, 'validation_error', 'amount must be between 10 and 10000');
+      return;
+    }
+
+    const result = await store.update((current) => {
+      const normalizedAmount = Number(amount.toFixed(2));
+      current.account.balance = Number((current.account.balance + normalizedAmount).toFixed(2));
+      const record = {
+        id: `bill_${Date.now().toString(36)}`,
+        date: new Date().toISOString().slice(0, 10),
+        type: 'recharge',
+        description: '账户余额充值',
+        amount: normalizedAmount,
+        balanceAfter: current.account.balance
+      };
+      current.billingRecords.unshift(record);
+      return { account: current.account, record };
+    });
+
+    sendJson(res, 201, result);
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/docs/examples') {
     sendJson(res, 200, data.docsExamples);
     return;

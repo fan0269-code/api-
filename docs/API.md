@@ -134,6 +134,34 @@
 
 返回充值和调用消费记录。
 
+`POST /api/billing/recharge`
+
+请求：
+
+```json
+{
+  "amount": 200
+}
+```
+
+`amount` 必须在 `10` 到 `10000` 之间。响应状态码 `201`，返回更新后的账户和新增账单记录：
+
+```json
+{
+  "account": {
+    "balance": 328.6
+  },
+  "record": {
+    "type": "recharge",
+    "description": "账户余额充值",
+    "amount": 200,
+    "balanceAfter": 328.6
+  }
+}
+```
+
+当前交付版为演示充值闭环，不连接真实支付网关。
+
 ## 文档示例
 
 `GET /api/docs/examples`
