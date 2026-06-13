@@ -1,5 +1,6 @@
 export type ModelStatus = 'available' | 'congested' | 'maintenance';
 export type ApiKeyStatus = 'active' | 'disabled';
+export type ChannelStatus = 'active' | 'degraded' | 'disabled';
 export type ToastKind = 'success' | 'error' | 'info';
 
 export interface Account {
@@ -30,6 +31,19 @@ export interface ModelInfo {
   outputPrice: string;
   latency: string;
   status: ModelStatus;
+}
+
+export interface ChannelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  baseUrl: string;
+  maskedKey: string;
+  status: ChannelStatus;
+  priority: number;
+  weight: number;
+  models: string[];
+  lastCheckedAt: string;
 }
 
 export interface UsagePoint {

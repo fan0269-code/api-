@@ -2,7 +2,7 @@
 
 ## 目标
 
-RelayHub 当前版本是可交付的前后端一体化网站，用于演示 API 中转站的公开官网、开发者控制台、API Key 管理、模型列表、用量统计、账单余额和接入文档。
+RelayHub 当前版本是可交付的前后端一体化网站，用于演示 API 中转站的公开官网、开发者控制台、API Key 管理、模型列表、渠道管理、用量统计、账单余额和接入文档。
 
 ## 组件
 
@@ -16,12 +16,13 @@ RelayHub 当前版本是可交付的前后端一体化网站，用于演示 API 
 
 1. 用户访问 `/` 查看公开官网。
 2. 用户进入 `/login` 并提交登录表单。
-3. 前端调用 `POST /api/auth/login`，随后并行拉取账户、Key、模型、用量、账单和文档示例。
+3. 前端调用 `POST /api/auth/login`，随后并行拉取账户、Key、模型、渠道、用量、账单和文档示例。
 4. 控制台页面通过 React 状态渲染后端数据。
 5. 创建或停用 API Key 时，前端调用后端接口，后端写入 `server/data/db.json`。
-6. 应用服务通过 `/v1/chat/completions` 使用 RelayHub Key 调用 OpenAI 兼容接口，后端校验 Key 和模型状态。
-7. 如果配置了 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY`，后端将请求转发给真实上游并透传响应；否则返回本地 mock completion。
-8. 中转调用成功后，后端写入用量点、账单记录和 Key 最近使用时间。
+6. 控制台通过 `/api/channels` 展示上游渠道，通过 `PATCH /api/channels/:id` 启用或停用渠道。
+7. 应用服务通过 `/v1/chat/completions` 使用 RelayHub Key 调用 OpenAI 兼容接口，后端校验 Key、模型状态和渠道可用性。
+8. 如果配置了 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY`，后端将请求转发给真实上游并透传响应；否则返回本地 mock completion。
+9. 中转调用成功后，后端写入用量点、账单记录和 Key 最近使用时间。
 
 ## 运行模式
 
@@ -71,12 +72,13 @@ HOST=127.0.0.1 PORT=8787 npm run server
 - API 错误响应使用统一 `{ error: { code, message } }` 结构。
 - 请求体限制为 64KB，避免异常大请求影响服务。
 - JSON 文件写入串行化，避免并发写覆盖。
+- 后端读取旧版 `server/data/db.json` 时会自动补齐缺失的默认渠道字段，降低演示数据升级风险。
 - 静态资源使用长期缓存，HTML 禁用缓存以便发布后及时更新。
 - `npm run verify` 覆盖前端测试、后端接口测试和生产构建。
-- `/v1/chat/completions` 支持 OpenAI 兼容上游转发；没有真实上游密钥时使用稳定 mock 响应，保证交付环境可独立验收。
+- `/v1/chat/completions` 支持 OpenAI 兼容上游转发，并在真实转发模式下校验启用渠道；没有真实上游密钥时使用稳定 mock 响应，保证交付环境可独立验收。
 
 ## 边界
 
 - 登录为演示登录，尚未接入真实用户认证和密码哈希。
 - API Key 为演示密钥，生产环境需要加密存储和权限审计。
-- 账单、支付、流式响应透传和生产级密钥加密存储尚未接入第三方服务；当前 `/v1/chat/completions` 已提供兼容接口、鉴权、上游转发、用量记录和 mock 兜底。
+- 账单、支付、流式响应透传和生产级密钥加密存储尚未接入第三方服务；当前 `/v1/chat/completions` 已提供兼容接口、鉴权、渠道校验、上游转发、用量记录和 mock 兜底。

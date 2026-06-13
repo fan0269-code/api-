@@ -126,14 +126,31 @@ test('api keys can be created and toggled persistently', async () => {
 test('read endpoints expose models, usage, billing, and docs', async () => {
   await withServer(async (baseUrl) => {
     const models = await request(baseUrl, '/api/models');
+    const channels = await request(baseUrl, '/api/channels');
     const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
     const billing = await request(baseUrl, '/api/billing');
     const docs = await request(baseUrl, '/api/docs/examples');
 
     assert.ok(models.body.some((model) => model.id === 'gpt-4.1-mini'));
+    assert.ok(channels.body.some((channel) => channel.status === 'active'));
     assert.ok(usage.body.every((point) => point.model === 'gpt-4.1-mini'));
     assert.ok(billing.body.some((record) => record.type === 'recharge'));
     assert.deepEqual(docs.body.map((example) => example.language), ['curl', 'Node.js', 'Python']);
+  });
+});
+
+test('channels can be toggled persistently', async () => {
+  await withServer(async (baseUrl) => {
+    const updated = await request(baseUrl, '/api/channels/channel_openai_primary', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'disabled' })
+    });
+
+    assert.equal(updated.response.status, 200);
+    assert.equal(updated.body.status, 'disabled');
+
+    const channels = await request(baseUrl, '/api/channels');
+    assert.equal(channels.body.find((channel) => channel.id === 'channel_openai_primary').status, 'disabled');
   });
 });
 
@@ -201,6 +218,34 @@ test('chat completions forwards to configured upstream and records usage', async
 
         const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
         assert.ok(usage.body.some((point) => point.source === 'relay'));
+      },
+      { upstreamBaseUrl, upstreamApiKey: 'upstream-secret' }
+    );
+  });
+});
+
+test('chat completions rejects configured upstream when no active channel serves the model', async () => {
+  await withUpstream(async (upstreamBaseUrl) => {
+    await withServer(
+      async (baseUrl) => {
+        const keys = await request(baseUrl, '/api/keys');
+        const activeKey = keys.body.find((key) => key.status === 'active');
+        await request(baseUrl, '/api/channels/channel_openai_primary', {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'disabled' })
+        });
+
+        const completion = await request(baseUrl, '/v1/chat/completions', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${activeKey.secret}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1-mini',
+            messages: [{ role: 'user', content: 'Should not forward' }]
+          })
+        });
+
+        assert.equal(completion.response.status, 503);
+        assert.equal(completion.body.error.code, 'channel_unavailable');
       },
       { upstreamBaseUrl, upstreamApiKey: 'upstream-secret' }
     );

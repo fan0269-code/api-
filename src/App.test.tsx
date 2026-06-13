@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 import { CopyButton, StatusBadge } from './components/ui';
-import { account, apiKeys, billingRecords, docsExamples, models, usageSeries } from './data/mock';
+import { account, apiKeys, billingRecords, channels, docsExamples, models, usageSeries } from './data/mock';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -18,6 +18,7 @@ beforeEach(() => {
     account: structuredClone(account),
     keys: structuredClone(apiKeys),
     billingRecords: structuredClone(billingRecords),
+    channels: structuredClone(channels),
     docsExamples: structuredClone(docsExamples),
     models: structuredClone(models),
     usageSeries: structuredClone(usageSeries)
@@ -72,6 +73,21 @@ beforeEach(() => {
         return jsonResponse(apiState.models);
       }
 
+      if (method === 'GET' && url.pathname === '/api/channels') {
+        return jsonResponse(apiState.channels);
+      }
+
+      if (method === 'PATCH' && url.pathname.startsWith('/api/channels/')) {
+        const id = url.pathname.split('/').pop();
+        const channel = apiState.channels.find((item) => item.id === id);
+        if (!channel) {
+          return jsonResponse({ error: { code: 'not_found', message: 'Channel not found' } }, 404);
+        }
+        channel.status = body.status;
+        channel.lastCheckedAt = '2026-06-13 10:30';
+        return jsonResponse(channel);
+      }
+
       if (method === 'GET' && url.pathname === '/api/usage') {
         const model = url.searchParams.get('model');
         return jsonResponse(model && model !== 'all' ? apiState.usageSeries.filter((point) => point.model === model) : apiState.usageSeries);
@@ -95,6 +111,7 @@ describe('mock data', () => {
     expect(account.name).toBe('林开发者');
     expect(apiKeys.length).toBeGreaterThanOrEqual(2);
     expect(models.map((model) => model.status)).toContain('available');
+    expect(channels.some((channel) => channel.status === 'active')).toBe(true);
     expect(usageSeries.length).toBeGreaterThanOrEqual(6);
     expect(billingRecords.length).toBeGreaterThanOrEqual(4);
     expect(docsExamples.map((example) => example.language)).toEqual(['curl', 'Node.js', 'Python']);
@@ -231,6 +248,27 @@ describe('keys and models', () => {
     expect(screen.getByText('OpenAI 兼容接口')).toBeInTheDocument();
     expect(screen.getByText('gpt-4.1-mini')).toBeInTheDocument();
     expect(screen.getByText('维护')).toBeInTheDocument();
+  });
+
+  it('shows channels and toggles upstream availability', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: '渠道管理' }));
+
+    expect(screen.getByText('真实转发优先，Mock 兜底验收')).toBeInTheDocument();
+    expect(screen.getByText('OpenAI 主通道')).toBeInTheDocument();
+    expect(screen.getByText('sk-••••••••••••main')).toBeInTheDocument();
+
+    await userEvent.click(screen.getAllByRole('button', { name: '停用' })[0]);
+    expect(await screen.findByText('渠道已停用')).toBeInTheDocument();
+    expect(screen.getByText('2026-06-13 10:30')).toBeInTheDocument();
   });
 });
 

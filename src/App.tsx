@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import { useMemo, useState } from 'react';
-import type { Account, ApiKey, BillingRecord, DocsExample, ModelInfo, ToastMessage, UsagePoint } from './types';
+import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, ToastMessage, UsagePoint } from './types';
 import { Shell } from './components/Shell';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -9,6 +9,7 @@ import { ModelsPage } from './pages/ModelsPage';
 import { UsagePage } from './pages/UsagePage';
 import { BillingPage } from './pages/BillingPage';
 import { DocsPage } from './pages/DocsPage';
+import { ChannelsPage } from './pages/ChannelsPage';
 import { ToastStack } from './components/ui';
 import { HomePage } from './pages/HomePage';
 import { api } from './api/client';
@@ -17,6 +18,7 @@ interface ConsoleState {
   account: Account;
   keys: ApiKey[];
   models: ModelInfo[];
+  channels: ChannelInfo[];
   usageSeries: UsagePoint[];
   billingRecords: BillingRecord[];
   docsExamples: DocsExample[];
@@ -66,6 +68,14 @@ export default function App() {
     return key;
   };
 
+  const updateChannelStatus = async (id: string, status: ChannelInfo['status']) => {
+    const channel = await api.updateChannelStatus(id, status);
+    setConsoleState((current) =>
+      current ? { ...current, channels: current.channels.map((item) => (item.id === channel.id ? channel : item)) } : current
+    );
+    return channel;
+  };
+
   return (
     <>
       <Routes>
@@ -102,6 +112,16 @@ export default function App() {
                     }
                   />
                   <Route path="/models" element={<ModelsPage models={consoleState.models} pushToast={pushToast} />} />
+                  <Route
+                    path="/channels"
+                    element={
+                      <ChannelsPage
+                        channels={consoleState.channels}
+                        updateChannelStatus={updateChannelStatus}
+                        pushToast={pushToast}
+                      />
+                    }
+                  />
                   <Route path="/usage" element={<UsagePage models={consoleState.models} usageSeries={consoleState.usageSeries} />} />
                   <Route
                     path="/billing"

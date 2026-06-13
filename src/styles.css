@@ -307,6 +307,11 @@ button {
   color: #92400e;
 }
 
+.status-degraded {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
 .status-maintenance,
 .status-disabled {
   background: #fee2e2;

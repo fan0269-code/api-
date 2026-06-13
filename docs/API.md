@@ -88,6 +88,24 @@
 
 返回模型、供应商、上下文、价格、延迟和状态。
 
+## 渠道
+
+`GET /api/channels`
+
+返回上游渠道列表。响应中的 `maskedKey` 为脱敏密钥，不暴露真实上游密钥。
+
+`PATCH /api/channels/:id`
+
+请求：
+
+```json
+{
+  "status": "disabled"
+}
+```
+
+`status` 只能是 `active`、`degraded` 或 `disabled`。生产转发模式下，`/v1/chat/completions` 只会使用状态为 `active` 且覆盖目标模型供应商的渠道。
+
 ## 用量
 
 `GET /api/usage`
@@ -161,6 +179,7 @@ Content-Type: application/json
 当前交付版支持两种模式：
 
 - 配置 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY` 时，请求会转发到 OpenAI 兼容上游。例如 `RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1` 会请求上游 `/chat/completions`。
+- 真实上游模式会先检查渠道状态；如果目标模型没有启用渠道，返回 `503 channel_unavailable`，不会继续请求上游。
 - 未配置上游时，接口返回稳定 mock 响应，仍会执行 API Key 校验、模型可用性校验，并写入用量和账单记录，便于离线验收。
 
 生产启动示例：
@@ -176,4 +195,5 @@ HOST=127.0.0.1 PORT=8787 npm run server
 - `401 invalid_api_key`：缺少或错误的 Bearer Key。
 - `403 key_disabled`：Key 已停用。
 - `400 validation_error`：缺少 `model` / `messages`，或模型不可用。
+- `503 channel_unavailable`：真实转发模式下没有启用的上游渠道覆盖目标模型。
 - `502 upstream_error`：上游服务异常或返回非预期响应。

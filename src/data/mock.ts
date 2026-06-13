@@ -1,4 +1,4 @@
-import type { Account, ApiKey, BillingRecord, DocsExample, ModelInfo, UsagePoint } from '../types';
+import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, UsagePoint } from '../types';
 
 export const baseUrl = 'https://api.relayhub.dev/v1';
 
@@ -49,6 +49,45 @@ export const models: ModelInfo[] = [
   { id: 'claude-3.7-sonnet', provider: 'Anthropic', context: '200K', inputPrice: '$3.00 / 1M', outputPrice: '$15.00 / 1M', latency: '880ms', status: 'congested' },
   { id: 'gemini-2.5-flash', provider: 'Google', context: '1M', inputPrice: '$0.30 / 1M', outputPrice: '$2.50 / 1M', latency: '540ms', status: 'available' },
   { id: 'deepseek-chat', provider: 'DeepSeek', context: '64K', inputPrice: '$0.14 / 1M', outputPrice: '$0.28 / 1M', latency: '710ms', status: 'maintenance' }
+];
+
+export const channels: ChannelInfo[] = [
+  {
+    id: 'channel_openai_primary',
+    name: 'OpenAI 主通道',
+    provider: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    maskedKey: 'sk-••••••••••••main',
+    status: 'active',
+    priority: 1,
+    weight: 80,
+    models: ['gpt-4.1-mini'],
+    lastCheckedAt: '2026-06-13 09:45'
+  },
+  {
+    id: 'channel_anthropic_backup',
+    name: 'Anthropic 备用通道',
+    provider: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    maskedKey: 'sk-ant-••••••backup',
+    status: 'degraded',
+    priority: 2,
+    weight: 20,
+    models: ['claude-3.7-sonnet'],
+    lastCheckedAt: '2026-06-13 09:40'
+  },
+  {
+    id: 'channel_local_mock',
+    name: '本地 Mock 兜底',
+    provider: 'RelayHub',
+    baseUrl: 'local://mock',
+    maskedKey: 'internal',
+    status: 'active',
+    priority: 99,
+    weight: 0,
+    models: ['gpt-4.1-mini', 'gemini-2.5-flash'],
+    lastCheckedAt: '2026-06-13 09:50'
+  }
 ];
 
 export const usageSeries: UsagePoint[] = [

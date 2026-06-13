@@ -58,6 +58,13 @@ function createStore(dataDir) {
   const path = join(dataDir, 'db.json');
   let writeQueue = Promise.resolve();
 
+  function normalize(data) {
+    if (!Array.isArray(data.channels)) {
+      data.channels = structuredClone(seedData.channels);
+    }
+    return data;
+  }
+
   async function ensure() {
     await mkdir(dirname(path), { recursive: true });
     if (!existsSync(path)) {
@@ -67,13 +74,13 @@ function createStore(dataDir) {
 
   async function read() {
     await ensure();
-    return JSON.parse(await readFile(path, 'utf8'));
+    return normalize(JSON.parse(await readFile(path, 'utf8')));
   }
 
   async function update(mutator) {
     await ensure();
     writeQueue = writeQueue.then(async () => {
-      const data = JSON.parse(await readFile(path, 'utf8'));
+      const data = normalize(JSON.parse(await readFile(path, 'utf8')));
       const result = await mutator(data);
       await writeFile(path, JSON.stringify(data, null, 2), 'utf8');
       return result;
@@ -316,6 +323,35 @@ async function handleApi(req, res, store) {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/channels') {
+    sendJson(res, 200, data.channels);
+    return;
+  }
+
+  const channelMatch = pathname.match(/^\/api\/channels\/([^/]+)$/);
+  if (req.method === 'PATCH' && channelMatch) {
+    const body = await readBody(req);
+    if (!['active', 'degraded', 'disabled'].includes(body.status)) {
+      sendError(res, 400, 'validation_error', 'status must be active, degraded, or disabled');
+      return;
+    }
+    const updated = await store.update((current) => {
+      const channel = current.channels.find((item) => item.id === channelMatch[1]);
+      if (!channel) {
+        return null;
+      }
+      channel.status = body.status;
+      channel.lastCheckedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      return channel;
+    });
+    if (!updated) {
+      sendError(res, 404, 'not_found', 'Channel not found');
+      return;
+    }
+    sendJson(res, 200, updated);
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/usage') {
     const model = searchParams.get('model');
     sendJson(res, 200, model && model !== 'all' ? data.usageSeries.filter((point) => point.model === model) : data.usageSeries);
@@ -370,6 +406,15 @@ async function handleRelay(req, res, store, relayConfig) {
     const model = data.models.find((item) => item.id === modelId);
     if (!model || model.status === 'maintenance') {
       return { status: 400, error: { code: 'validation_error', message: 'model is unavailable' } };
+    }
+
+    if (relayConfig.upstreamBaseUrl && relayConfig.upstreamApiKey) {
+      const channel = data.channels.find(
+        (item) => item.status === 'active' && item.provider === model.provider && item.models.includes(modelId)
+      );
+      if (!channel) {
+        return { status: 503, error: { code: 'channel_unavailable', message: 'No active upstream channel for this model' } };
+      }
     }
 
     return { status: 200 };
