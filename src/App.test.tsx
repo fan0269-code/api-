@@ -52,3 +52,34 @@ describe('shared UI', () => {
     expect(onDone).toHaveBeenCalledWith(true);
   });
 });
+
+describe('login and overview', () => {
+  it('shows validation when login fields are empty', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    expect(screen.getByText('请输入邮箱或手机号')).toBeInTheDocument();
+    expect(screen.getByText('请输入密码')).toBeInTheDocument();
+  });
+
+  it('shows balanced overview modules after login', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+
+    expect(await screen.findByText('快速接入')).toBeInTheDocument();
+    expect(screen.getByText('运行状态')).toBeInTheDocument();
+    expect(screen.getByText('账户余额')).toBeInTheDocument();
+    expect(screen.getByText('https://api.relayhub.dev/v1')).toBeInTheDocument();
+  });
+});
