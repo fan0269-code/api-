@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "deploy:tencent": "./deploy/tencent-cloud/deploy.sh",
     "preview": "vite preview",
+    "preview:prod": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest"
   },
