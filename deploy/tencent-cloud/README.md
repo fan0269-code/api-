@@ -56,6 +56,17 @@ cd /var/www/api-relay-console
 HOST=127.0.0.1 PORT=8787 npm run server
 ```
 
+To forward real model calls through `/v1/chat/completions`, provide an OpenAI-compatible upstream:
+
+```bash
+cd /var/www/api-relay-console
+RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
+RELAY_UPSTREAM_API_KEY=sk-your-upstream-key \
+HOST=127.0.0.1 PORT=8787 npm run server
+```
+
+If these two variables are not set, the backend uses the built-in mock response mode and still records usage for demo validation.
+
 For production, run this command under a process manager such as systemd or pm2.
 
 ## Configure Nginx
@@ -65,6 +76,7 @@ Copy `nginx-api-relay-console.conf` to the server and adjust:
 - `server_name` to your domain or server IP.
 - `root` to match `DEPLOY_PATH`.
 - `proxy_pass` port to match the API `PORT` if you changed it.
+- Keep both `/api/` and `/v1/` proxied to the Node service. `/api/` powers the console, while `/v1/` is the OpenAI-compatible client endpoint.
 
 Then enable and reload Nginx:
 
@@ -78,3 +90,4 @@ sudo systemctl reload nginx
 
 - The app uses client-side routing, so the Nginx config includes `try_files $uri $uri/ /index.html`.
 - The API persists demo data in `server/data/db.json` on first start. Back up this file if you keep demo state between deployments.
+- Keep `RELAY_UPSTREAM_API_KEY` in the process manager environment, not in the browser build or committed files.

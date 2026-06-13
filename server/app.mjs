@@ -92,6 +92,110 @@ function createSecret() {
   return `rh_live_sk_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
 }
 
+function getBearerToken(req) {
+  const header = req.headers.authorization ?? '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() ?? '';
+}
+
+function estimateTokens(messages) {
+  const text = messages.map((message) => String(message.content ?? '')).join(' ');
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
+function createMockCompletion({ model, messages }) {
+  const promptTokens = estimateTokens(messages);
+  const completionText = 'RelayHub mock response: 请求已通过 API 中转站验证。配置上游密钥后可切换为真实模型转发。';
+  const completionTokens = estimateTokens([{ content: completionText }]);
+
+  return {
+    id: `chatcmpl_${Date.now().toString(36)}`,
+    object: 'chat.completion',
+    created: Math.floor(Date.now() / 1000),
+    model,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: completionText
+        },
+        finish_reason: 'stop'
+      }
+    ],
+    usage: {
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      total_tokens: promptTokens + completionTokens
+    }
+  };
+}
+
+async function createUpstreamCompletion({ upstreamBaseUrl, upstreamApiKey, body }) {
+  const endpoint = `${upstreamBaseUrl.replace(/\/+$/, '')}/chat/completions`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${upstreamApiKey}`,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  const text = await response.text();
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { error: { code: 'upstream_error', message: text || 'Upstream returned a non-JSON response' } };
+  }
+
+  if (!response.ok) {
+    const message = payload?.error?.message ?? `Upstream request failed with status ${response.status}`;
+    throw Object.assign(new Error(message), {
+      status: response.status >= 500 ? 502 : response.status,
+      code: payload?.error?.code ?? 'upstream_error'
+    });
+  }
+
+  return payload;
+}
+
+function getCompletionTotalTokens(completion, messages) {
+  if (Number.isFinite(completion?.usage?.total_tokens)) {
+    return Math.max(1, completion.usage.total_tokens);
+  }
+  return estimateTokens(messages) + 24;
+}
+
+function todayLabel() {
+  const now = new Date();
+  return `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function recordRelayUsage(data, { model, cost, latencyMs }) {
+  const point = {
+    date: todayLabel(),
+    model,
+    calls: 1,
+    cost,
+    errorRate: 0,
+    latencyMs,
+    source: 'relay'
+  };
+  data.usageSeries.push(point);
+  data.account.balance = Number((data.account.balance - cost).toFixed(4));
+  data.account.monthlySpend = Number((data.account.monthlySpend + cost).toFixed(4));
+  data.billingRecords.unshift({
+    id: `bill_${Date.now().toString(36)}`,
+    date: new Date().toISOString().slice(0, 10),
+    type: 'usage',
+    description: `${model} 中转调用`,
+    amount: -cost,
+    balanceAfter: data.account.balance
+  });
+}
+
 async function serveStatic(req, res, publicDir) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
@@ -231,13 +335,93 @@ async function handleApi(req, res, store) {
   sendError(res, 404, 'not_found', 'API route not found');
 }
 
-export function createApiServer({ dataDir = defaultDataDir, publicDir = defaultPublicDir } = {}) {
+async function handleRelay(req, res, store, relayConfig) {
+  const url = new URL(req.url, 'http://localhost');
+  if (!(req.method === 'POST' && url.pathname === '/v1/chat/completions')) {
+    sendError(res, 404, 'not_found', 'Relay route not found');
+    return;
+  }
+
+  const token = getBearerToken(req);
+  if (!token) {
+    sendError(res, 401, 'invalid_api_key', 'Missing Bearer API key');
+    return;
+  }
+
+  const body = await readBody(req);
+  const modelId = String(body.model ?? '').trim();
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+
+  if (!modelId || !messages.length) {
+    sendError(res, 400, 'validation_error', 'model and messages are required');
+    return;
+  }
+
+  const started = Date.now();
+  const access = await store.read().then((data) => {
+    const key = data.apiKeys.find((item) => item.secret === token);
+    if (!key) {
+      return { status: 401, error: { code: 'invalid_api_key', message: 'API key is invalid' } };
+    }
+    if (key.status !== 'active') {
+      return { status: 403, error: { code: 'key_disabled', message: 'API key is disabled' } };
+    }
+
+    const model = data.models.find((item) => item.id === modelId);
+    if (!model || model.status === 'maintenance') {
+      return { status: 400, error: { code: 'validation_error', message: 'model is unavailable' } };
+    }
+
+    return { status: 200 };
+  });
+
+  if (access.error) {
+    sendError(res, access.status, access.error.code, access.error.message);
+    return;
+  }
+
+  const hasUpstream = relayConfig.upstreamBaseUrl && relayConfig.upstreamApiKey;
+  const completion = hasUpstream
+    ? await createUpstreamCompletion({
+        upstreamBaseUrl: relayConfig.upstreamBaseUrl,
+        upstreamApiKey: relayConfig.upstreamApiKey,
+        body
+      })
+    : createMockCompletion({ model: modelId, messages });
+
+  await store.update((data) => {
+    const key = data.apiKeys.find((item) => item.secret === token);
+    if (!key || key.status !== 'active') {
+      return;
+    }
+    const totalTokens = getCompletionTotalTokens(completion, messages);
+    const cost = Number(((totalTokens / 1000) * 0.002).toFixed(4));
+    recordRelayUsage(data, { model: modelId, cost, latencyMs: Math.max(1, Date.now() - started) });
+    key.lastUsedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  });
+
+  sendJson(res, 200, completion);
+}
+
+export function createApiServer({
+  dataDir = defaultDataDir,
+  publicDir = defaultPublicDir,
+  upstreamBaseUrl = process.env.RELAY_UPSTREAM_BASE_URL,
+  upstreamApiKey = process.env.RELAY_UPSTREAM_API_KEY
+} = {}) {
   const store = createStore(dataDir);
+  const relayConfig = {
+    upstreamBaseUrl: upstreamBaseUrl?.trim(),
+    upstreamApiKey: upstreamApiKey?.trim()
+  };
+
   return createServer(async (req, res) => {
     try {
       res.setHeader('x-content-type-options', 'nosniff');
       if (req.url?.startsWith('/api/')) {
         await handleApi(req, res, store);
+      } else if (req.url?.startsWith('/v1/')) {
+        await handleRelay(req, res, store, relayConfig);
       } else {
         await serveStatic(req, res, publicDir);
       }

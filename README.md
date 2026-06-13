@@ -12,6 +12,7 @@ RelayHub 是一个可交付的 API 中转站网站，包含公开官网首页、
 - `/usage`：用量统计。
 - `/billing`：账单余额。
 - `/docs`：接入文档和示例代码。
+- `/v1/chat/completions`：OpenAI 兼容中转接口，支持真实上游转发；未配置上游时默认 mock 响应并记录用量。
 
 ## 本地运行
 
@@ -19,6 +20,14 @@ RelayHub 是一个可交付的 API 中转站网站，包含公开官网首页、
 
 ```bash
 npm install
+npm run dev:api
+```
+
+如需转发真实模型，在启动后端前配置 OpenAI 兼容上游：
+
+```bash
+export RELAY_UPSTREAM_BASE_URL="https://api.openai.com/v1"
+export RELAY_UPSTREAM_API_KEY="sk-your-upstream-key"
 npm run dev:api
 ```
 
@@ -89,5 +98,6 @@ deploy/tencent-cloud/README.md
 ## 当前边界
 
 - 当前版本包含前端和后端 API，后端使用 JSON 文件保存演示数据。
+- OpenAI 兼容中转接口已具备 Key 鉴权、模型校验、真实上游转发、mock 兜底、用量和账单记录。
 - 登录是演示登录，尚未接入真实用户体系、密码哈希和权限审计。
-- 真实上游模型转发、支付、发票和生产级密钥加密存储需要继续接入外部服务。
+- 支付、发票、流式响应透传和生产级密钥加密存储需要继续接入外部服务。

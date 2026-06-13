@@ -109,3 +109,71 @@
 `GET /api/docs/examples`
 
 返回 curl、Node.js、Python 示例代码。
+
+## OpenAI 兼容中转
+
+`POST /v1/chat/completions`
+
+请求头：
+
+```text
+Authorization: Bearer rh_live_sk_8K2A_demo_secret
+Content-Type: application/json
+```
+
+请求：
+
+```json
+{
+  "model": "gpt-4.1-mini",
+  "messages": [
+    { "role": "user", "content": "Hello RelayHub" }
+  ]
+}
+```
+
+响应为 OpenAI 兼容的 `chat.completion` 结构：
+
+```json
+{
+  "id": "chatcmpl_demo",
+  "object": "chat.completion",
+  "created": 1781330000,
+  "model": "gpt-4.1-mini",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "RelayHub mock response..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 4,
+    "completion_tokens": 24,
+    "total_tokens": 28
+  }
+}
+```
+
+当前交付版支持两种模式：
+
+- 配置 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY` 时，请求会转发到 OpenAI 兼容上游。例如 `RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1` 会请求上游 `/chat/completions`。
+- 未配置上游时，接口返回稳定 mock 响应，仍会执行 API Key 校验、模型可用性校验，并写入用量和账单记录，便于离线验收。
+
+生产启动示例：
+
+```bash
+RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
+RELAY_UPSTREAM_API_KEY=sk-your-upstream-key \
+HOST=127.0.0.1 PORT=8787 npm run server
+```
+
+常见错误：
+
+- `401 invalid_api_key`：缺少或错误的 Bearer Key。
+- `403 key_disabled`：Key 已停用。
+- `400 validation_error`：缺少 `model` / `messages`，或模型不可用。
+- `502 upstream_error`：上游服务异常或返回非预期响应。
