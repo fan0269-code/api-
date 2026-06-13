@@ -21,7 +21,7 @@ RelayHub 当前版本是可交付的前后端一体化网站，用于演示 API 
 5. 创建或停用 API Key 时，前端调用后端接口，后端写入 `server/data/db.json`；Key 同时包含月配额、已用额度和 RPM 限制。
 6. 控制台通过 `/api/channels` 展示上游渠道，通过 `PATCH /api/channels/:id` 启用或停用渠道。
 7. 应用服务通过 `/v1/chat/completions` 使用 RelayHub Key 调用 OpenAI 兼容接口，后端校验 Key、月配额、RPM、模型状态和渠道可用性。
-8. 如果配置了 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY`，后端将请求转发给真实上游并透传响应；否则返回本地 mock completion。
+8. 如果配置了 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY`，后端将请求转发给真实上游并透传非流式 JSON 或流式 SSE；否则返回本地 mock completion 或 mock SSE。
 9. 中转调用成功后，后端写入用量点、账单记录、Key 已用额度和最近使用时间。
 10. 用户在账单页提交充值金额时，前端调用 `POST /api/billing/recharge`，后端更新账户余额并追加充值账单记录。
 
@@ -78,11 +78,11 @@ HOST=127.0.0.1 PORT=8787 npm run server
 - 后端读取旧版 `server/data/db.json` 时会自动补齐缺失的默认渠道和 Key 限制字段，降低演示数据升级风险。
 - 静态资源使用长期缓存，HTML 禁用缓存以便发布后及时更新。
 - `npm run verify` 覆盖前端测试、后端接口测试和生产构建。
-- `/v1/chat/completions` 支持 OpenAI 兼容上游转发，并在真实转发模式下校验启用渠道；没有真实上游密钥时使用稳定 mock 响应，保证交付环境可独立验收。
+- `/v1/chat/completions` 支持 OpenAI 兼容上游转发和 SSE 流式透传，并在真实转发模式下校验启用渠道；没有真实上游密钥时使用稳定 mock 响应，保证交付环境可独立验收。
 
 ## 边界
 
 - 登录为演示登录，尚未接入真实用户认证和密码哈希。
 - API Key 为演示密钥，生产环境需要加密存储和权限审计。
 - 当前充值为演示余额充值闭环，尚未接入真实支付网关、发票和对账服务。
-- 流式响应透传和生产级密钥加密存储尚未接入第三方服务；当前 `/v1/chat/completions` 已提供兼容接口、鉴权、渠道校验、上游转发、用量记录和 mock 兜底。
+- 生产级密钥加密存储尚未接入第三方服务；当前 `/v1/chat/completions` 已提供兼容接口、鉴权、渠道校验、上游转发、SSE 流式透传、用量记录和 mock 兜底。

@@ -33,6 +33,18 @@ async function request(baseUrl, path, options = {}) {
   return { response, body };
 }
 
+async function requestText(baseUrl, path, options = {}) {
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...options,
+    headers: {
+      'content-type': 'application/json',
+      ...(options.headers ?? {})
+    }
+  });
+  const body = await response.text();
+  return { response, body };
+}
+
 async function withUpstream(fn) {
   const calls = [];
   const server = createHttpServer(async (req, res) => {
@@ -46,6 +58,13 @@ async function withUpstream(fn) {
       authorization: req.headers.authorization,
       body: JSON.parse(Buffer.concat(chunks).toString('utf8'))
     });
+    if (calls.at(-1).body.stream === true) {
+      res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8' });
+      res.write('data: {"id":"chatcmpl_stream_test","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"upstream stream"},"finish_reason":null}]}\n\n');
+      res.write('data: [DONE]\n\n');
+      res.end();
+      return;
+    }
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(
       JSON.stringify({
@@ -230,6 +249,32 @@ test('chat completions accepts active relay keys and records usage', async () =>
   });
 });
 
+test('chat completions supports mock streaming responses and records usage', async () => {
+  await withServer(async (baseUrl) => {
+    const keys = await request(baseUrl, '/api/keys');
+    const activeKey = keys.body.find((key) => key.status === 'active');
+
+    const stream = await requestText(baseUrl, '/v1/chat/completions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${activeKey.secret}` },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        stream: true,
+        messages: [{ role: 'user', content: 'Stream this' }]
+      })
+    });
+
+    assert.equal(stream.response.status, 200);
+    assert.match(stream.response.headers.get('content-type'), /text\/event-stream/);
+    assert.match(stream.body, /chat\.completion\.chunk/);
+    assert.match(stream.body, /RelayHub mock stream/);
+    assert.match(stream.body, /data: \[DONE\]/);
+
+    const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
+    assert.ok(usage.body.some((point) => point.source === 'relay'));
+  });
+});
+
 test('chat completions rejects keys that exhausted monthly quota', async () => {
   await withServer(async (baseUrl) => {
     const keys = await request(baseUrl, '/api/keys');
@@ -306,6 +351,38 @@ test('chat completions forwards to configured upstream and records usage', async
         assert.equal(calls[0].url, '/v1/chat/completions');
         assert.equal(calls[0].authorization, 'Bearer upstream-secret');
         assert.equal(calls[0].body.model, 'gpt-4.1-mini');
+
+        const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
+        assert.ok(usage.body.some((point) => point.source === 'relay'));
+      },
+      { upstreamBaseUrl, upstreamApiKey: 'upstream-secret' }
+    );
+  });
+});
+
+test('chat completions proxies configured upstream streaming responses', async () => {
+  await withUpstream(async (upstreamBaseUrl, calls) => {
+    await withServer(
+      async (baseUrl) => {
+        const keys = await request(baseUrl, '/api/keys');
+        const activeKey = keys.body.find((key) => key.status === 'active');
+
+        const stream = await requestText(baseUrl, '/v1/chat/completions', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${activeKey.secret}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1-mini',
+            stream: true,
+            messages: [{ role: 'user', content: 'Forward stream' }]
+          })
+        });
+
+        assert.equal(stream.response.status, 200);
+        assert.match(stream.response.headers.get('content-type'), /text\/event-stream/);
+        assert.match(stream.body, /upstream stream/);
+        assert.match(stream.body, /data: \[DONE\]/);
+        assert.equal(calls.at(-1).body.stream, true);
+        assert.equal(calls.at(-1).authorization, 'Bearer upstream-secret');
 
         const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
         assert.ok(usage.body.some((point) => point.source === 'relay'));

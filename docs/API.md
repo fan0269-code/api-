@@ -184,6 +184,7 @@ Content-Type: application/json
 ```json
 {
   "model": "gpt-4.1-mini",
+  "stream": false,
   "messages": [
     { "role": "user", "content": "Hello RelayHub" }
   ]
@@ -216,9 +217,22 @@ Content-Type: application/json
 }
 ```
 
+当 `stream` 为 `true` 时，响应为 OpenAI 兼容的 data-only Server-Sent Events：
+
+```text
+Content-Type: text/event-stream
+
+data: {"id":"chatcmpl_demo","object":"chat.completion.chunk","choices":[{"delta":{"content":"..."}}]}
+
+data: [DONE]
+```
+
+流式响应同样会执行 API Key 鉴权、配额/RPM、模型和渠道校验，并在流结束前写入用量和账单记录。
+
 当前交付版支持两种模式：
 
 - 配置 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY` 时，请求会转发到 OpenAI 兼容上游。例如 `RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1` 会请求上游 `/chat/completions`。
+- 上游返回 `text/event-stream` 时会透传 SSE 数据；未配置上游时提供稳定 mock SSE，便于 SDK 流式调用验收。
 - 真实上游模式会先检查渠道状态；如果目标模型没有启用渠道，返回 `503 channel_unavailable`，不会继续请求上游。
 - 未配置上游时，接口返回稳定 mock 响应，仍会执行 API Key 校验、模型可用性校验，并写入用量和账单记录，便于离线验收。
 

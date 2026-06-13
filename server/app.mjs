@@ -176,6 +176,36 @@ async function createUpstreamCompletion({ upstreamBaseUrl, upstreamApiKey, body 
   return payload;
 }
 
+async function createUpstreamStream({ upstreamBaseUrl, upstreamApiKey, body }) {
+  const endpoint = `${upstreamBaseUrl.replace(/\/+$/, '')}/chat/completions`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${upstreamApiKey}`,
+      'content-type': 'application/json',
+      accept: 'text/event-stream'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let payload;
+    try {
+      payload = text ? JSON.parse(text) : {};
+    } catch {
+      payload = { error: { code: 'upstream_error', message: text || 'Upstream stream request failed' } };
+    }
+    const message = payload?.error?.message ?? `Upstream stream request failed with status ${response.status}`;
+    throw Object.assign(new Error(message), {
+      status: response.status >= 500 ? 502 : response.status,
+      code: payload?.error?.code ?? 'upstream_error'
+    });
+  }
+
+  return response;
+}
+
 function getCompletionTotalTokens(completion, messages) {
   if (Number.isFinite(completion?.usage?.total_tokens)) {
     return Math.max(1, completion.usage.total_tokens);
@@ -211,6 +241,19 @@ function recordRelayUsage(data, { model, cost, latencyMs }) {
   });
 }
 
+async function recordRelaySuccess(store, { token, model, totalTokens, latencyMs }) {
+  await store.update((data) => {
+    const key = data.apiKeys.find((item) => item.secret === token);
+    if (!key || key.status !== 'active') {
+      return;
+    }
+    const cost = Number(((totalTokens / 1000) * 0.002).toFixed(4));
+    recordRelayUsage(data, { model, cost, latencyMs });
+    key.monthlyUsed = Number((Number(key.monthlyUsed ?? 0) + cost).toFixed(4));
+    key.lastUsedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  });
+}
+
 function createRateLimiter() {
   const buckets = new Map();
 
@@ -237,6 +280,64 @@ function createRateLimiter() {
       return { ok: true };
     }
   };
+}
+
+function sendSseChunk(res, payload) {
+  res.write(`data: ${typeof payload === 'string' ? payload : JSON.stringify(payload)}\n\n`);
+}
+
+async function sendMockStream(res, { model, messages }) {
+  const id = `chatcmpl_${Date.now().toString(36)}`;
+  const created = Math.floor(Date.now() / 1000);
+  const completionText = 'RelayHub mock stream: 请求已通过 API 中转站验证。';
+
+  res.writeHead(200, {
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no'
+  });
+  sendSseChunk(res, {
+    id,
+    object: 'chat.completion.chunk',
+    created,
+    model,
+    choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }]
+  });
+  sendSseChunk(res, {
+    id,
+    object: 'chat.completion.chunk',
+    created,
+    model,
+    choices: [{ index: 0, delta: { content: completionText }, finish_reason: null }]
+  });
+  sendSseChunk(res, {
+    id,
+    object: 'chat.completion.chunk',
+    created,
+    model,
+    choices: [{ index: 0, delta: {}, finish_reason: 'stop' }]
+  });
+  sendSseChunk(res, '[DONE]');
+
+  return estimateTokens(messages) + estimateTokens([{ content: completionText }]);
+}
+
+async function pipeUpstreamStream(res, upstreamResponse) {
+  res.writeHead(200, {
+    'content-type': upstreamResponse.headers.get('content-type') ?? 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no'
+  });
+
+  if (!upstreamResponse.body) {
+    return;
+  }
+
+  for await (const chunk of upstreamResponse.body) {
+    res.write(Buffer.from(chunk));
+  }
 }
 
 async function serveStatic(req, res, publicDir) {
@@ -500,6 +601,29 @@ async function handleRelay(req, res, store, relayConfig, rateLimiter) {
   }
 
   const hasUpstream = relayConfig.upstreamBaseUrl && relayConfig.upstreamApiKey;
+
+  if (body.stream === true) {
+    const totalTokens = hasUpstream
+      ? await createUpstreamStream({
+          upstreamBaseUrl: relayConfig.upstreamBaseUrl,
+          upstreamApiKey: relayConfig.upstreamApiKey,
+          body
+        }).then(async (upstreamResponse) => {
+          await pipeUpstreamStream(res, upstreamResponse);
+          return estimateTokens(messages) + 24;
+        })
+      : await sendMockStream(res, { model: modelId, messages });
+
+    await recordRelaySuccess(store, {
+      token,
+      model: modelId,
+      totalTokens,
+      latencyMs: Math.max(1, Date.now() - started)
+    });
+    res.end();
+    return;
+  }
+
   const completion = hasUpstream
     ? await createUpstreamCompletion({
         upstreamBaseUrl: relayConfig.upstreamBaseUrl,
@@ -508,16 +632,11 @@ async function handleRelay(req, res, store, relayConfig, rateLimiter) {
       })
     : createMockCompletion({ model: modelId, messages });
 
-  await store.update((data) => {
-    const key = data.apiKeys.find((item) => item.secret === token);
-    if (!key || key.status !== 'active') {
-      return;
-    }
-    const totalTokens = getCompletionTotalTokens(completion, messages);
-    const cost = Number(((totalTokens / 1000) * 0.002).toFixed(4));
-    recordRelayUsage(data, { model: modelId, cost, latencyMs: Math.max(1, Date.now() - started) });
-    key.monthlyUsed = Number((Number(key.monthlyUsed ?? 0) + cost).toFixed(4));
-    key.lastUsedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  await recordRelaySuccess(store, {
+    token,
+    model: modelId,
+    totalTokens: getCompletionTotalTokens(completion, messages),
+    latencyMs: Math.max(1, Date.now() - started)
   });
 
   sendJson(res, 200, completion);

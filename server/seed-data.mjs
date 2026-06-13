@@ -115,7 +115,7 @@ export const seedData = {
       code: `curl ${baseUrl}/chat/completions \\
   -H "Authorization: Bearer rh_live_sk_xxx" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"Hello"}]}'`
+  -d '{"model":"gpt-4.1-mini","stream":true,"messages":[{"role":"user","content":"Hello"}]}'`
     },
     {
       language: 'Node.js',
@@ -127,9 +127,14 @@ export const seedData = {
   },
   body: JSON.stringify({
     model: 'gpt-4.1-mini',
+    stream: true,
     messages: [{ role: 'user', content: 'Hello' }]
   })
-});`
+});
+
+for await (const chunk of response.body) {
+  process.stdout.write(new TextDecoder().decode(chunk));
+}`
     },
     {
       language: 'Python',
@@ -138,8 +143,13 @@ export const seedData = {
 response = requests.post(
     '${baseUrl}/chat/completions',
     headers={'Authorization': 'Bearer rh_live_sk_xxx'},
-    json={'model': 'gpt-4.1-mini', 'messages': [{'role':'user','content':'Hello'}]},
-)`
+    json={'model': 'gpt-4.1-mini', 'stream': True, 'messages': [{'role':'user','content':'Hello'}]},
+    stream=True,
+)
+
+for line in response.iter_lines():
+    if line:
+        print(line.decode())`
     }
   ]
 };

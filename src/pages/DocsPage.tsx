@@ -3,9 +3,10 @@ import type { DocsExample, ToastMessage } from '../types';
 
 const commonErrors = [
   { code: 'invalid_api_key', meaning: 'Key 不存在、已停用或请求头格式错误。', action: '检查 Authorization Bearer token。' },
-  { code: 'insufficient_balance', meaning: '账户余额不足，无法继续转发。', action: '充值或降低调用频率。' },
-  { code: 'rate_limited', meaning: '当前 Key 或模型达到限流阈值。', action: '稍后重试或升级套餐。' },
-  { code: 'upstream_timeout', meaning: '上游模型响应超时。', action: '重试请求或切换模型。' }
+  { code: 'quota_exceeded', meaning: '当前 Key 月配额已耗尽。', action: '充值、提升 Key 配额或更换 Key。' },
+  { code: 'rate_limit_exceeded', meaning: '当前 Key 达到每分钟请求限制。', action: '稍后重试或提高 RPM 限制。' },
+  { code: 'channel_unavailable', meaning: '目标模型没有启用的上游渠道。', action: '启用渠道或切换模型。' },
+  { code: 'upstream_error', meaning: '上游模型返回异常。', action: '重试请求或切换渠道。' }
 ];
 
 export function DocsPage({

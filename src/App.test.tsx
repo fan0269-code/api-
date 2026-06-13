@@ -337,6 +337,6 @@ describe('usage billing and docs', () => {
     expect(screen.getByText('curl')).toBeInTheDocument();
     expect(screen.getByText('Node.js')).toBeInTheDocument();
     expect(screen.getByText('Python')).toBeInTheDocument();
-    expect(screen.getByText('insufficient_balance')).toBeInTheDocument();
+    expect(screen.getByText('quota_exceeded')).toBeInTheDocument();
   });
 });
