@@ -131,6 +131,8 @@ button {
 .two-grid {
   display: grid;
   gap: 16px;
+  min-width: 0;
+  width: 100%;
 }
 
 .three-grid {
@@ -151,6 +153,7 @@ button {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
+  min-width: 0;
 }
 
 .card,
@@ -163,6 +166,7 @@ button {
 .section-header {
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
@@ -394,10 +398,12 @@ pre {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .info-row {
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 10px 0;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -459,6 +465,7 @@ pre {
   justify-content: space-between;
   gap: 18px;
   align-items: center;
+  min-width: 0;
 }
 
 .endpoint-card h3 {
@@ -479,9 +486,18 @@ pre {
   background: #eff6ff;
 }
 
+.filter-inline,
 .filter-control {
   display: inline-grid;
   gap: 6px;
+}
+
+.filter-inline {
+  grid-template-columns: auto minmax(180px, 240px);
+  align-items: end;
+}
+
+.filter-control {
   color: #475569;
   font-size: 13px;
 }
@@ -496,6 +512,7 @@ pre {
   grid-template-columns: 54px minmax(120px, 1fr) minmax(120px, 2fr) 86px 72px 56px;
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .warning-note,
@@ -604,7 +621,8 @@ pre {
   .three-grid,
   .two-grid,
   .login-page,
-  .usage-row {
+  .usage-row,
+  .filter-inline {
     grid-template-columns: 1fr;
   }
 

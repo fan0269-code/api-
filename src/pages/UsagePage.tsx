@@ -28,18 +28,20 @@ export function UsagePage() {
         eyebrow="Analytics"
         title="用量统计"
         action={
-          <label className="filter-control">
+          <div className="filter-inline">
+          <label className="filter-control" htmlFor="usage-model-filter">
             按模型筛选
-            <select className="toolbar-select" value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
-              <option value="all">全部模型</option>
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.id}
-                </option>
-              ))}
-              <option value="no-results">无数据模型</option>
-            </select>
           </label>
+          <select id="usage-model-filter" className="toolbar-select" value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
+            <option value="all">全部模型</option>
+            {models.map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.id}
+              </option>
+            ))}
+            <option value="no-results">无数据模型</option>
+          </select>
+          </div>
         }
       />
 
