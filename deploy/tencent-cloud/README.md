@@ -53,6 +53,7 @@ The deploy script uploads `server/` and `package.json` with the static `dist/` f
 
 ```bash
 cd /var/www/api-relay-console
+RELAY_ADMIN_TOKEN=replace-with-a-long-random-console-token \
 HOST=127.0.0.1 PORT=8787 npm run server
 ```
 
@@ -62,10 +63,12 @@ To forward real model calls through `/v1/chat/completions`, provide an OpenAI-co
 cd /var/www/api-relay-console
 RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
 RELAY_UPSTREAM_API_KEY=sk-your-upstream-key \
+RELAY_ADMIN_TOKEN=replace-with-a-long-random-console-token \
 HOST=127.0.0.1 PORT=8787 npm run server
 ```
 
 If these two variables are not set, the backend uses the built-in mock response mode and still records usage for demo validation.
+If `RELAY_ADMIN_TOKEN` is not set, the backend falls back to the demo console token. Set it in production.
 
 For production, run this command under a process manager such as systemd or pm2.
 

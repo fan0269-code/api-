@@ -25,6 +25,8 @@ const staticTypes = {
   '.ico': 'image/x-icon'
 };
 
+const defaultAdminToken = 'demo-session-token';
+
 function sendJson(res, status, payload) {
   res.writeHead(status, jsonHeaders);
   res.end(JSON.stringify(payload));
@@ -374,7 +376,7 @@ async function serveStatic(req, res, publicDir) {
   }
 }
 
-async function handleApi(req, res, store) {
+async function handleApi(req, res, store, adminToken) {
   const url = new URL(req.url, 'http://localhost');
   const { pathname, searchParams } = url;
 
@@ -390,7 +392,12 @@ async function handleApi(req, res, store) {
       return;
     }
     const data = await store.read();
-    sendJson(res, 200, { token: 'demo-session-token', account: data.account });
+    sendJson(res, 200, { token: adminToken, account: data.account });
+    return;
+  }
+
+  if (getBearerToken(req) !== adminToken) {
+    sendError(res, 401, 'unauthorized', 'Valid console session token is required');
     return;
   }
 
@@ -646,7 +653,8 @@ export function createApiServer({
   dataDir = defaultDataDir,
   publicDir = defaultPublicDir,
   upstreamBaseUrl = process.env.RELAY_UPSTREAM_BASE_URL,
-  upstreamApiKey = process.env.RELAY_UPSTREAM_API_KEY
+  upstreamApiKey = process.env.RELAY_UPSTREAM_API_KEY,
+  adminToken = process.env.RELAY_ADMIN_TOKEN || defaultAdminToken
 } = {}) {
   const store = createStore(dataDir);
   const rateLimiter = createRateLimiter();
@@ -659,7 +667,7 @@ export function createApiServer({
     try {
       res.setHeader('x-content-type-options', 'nosniff');
       if (req.url?.startsWith('/api/')) {
-        await handleApi(req, res, store);
+        await handleApi(req, res, store, adminToken);
       } else if (req.url?.startsWith('/v1/')) {
         await handleRelay(req, res, store, relayConfig, rateLimiter);
       } else {

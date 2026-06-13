@@ -22,15 +22,39 @@ async function withServer(fn, options = {}) {
 }
 
 async function request(baseUrl, path, options = {}) {
+  const { auth = true, ...fetchOptions } = options;
+  const headers = {
+    'content-type': 'application/json',
+    ...(auth && path.startsWith('/api/') && path !== '/api/health' && path !== '/api/auth/login'
+      ? { authorization: 'Bearer demo-session-token' }
+      : {}),
+    ...(fetchOptions.headers ?? {})
+  };
   const response = await fetch(`${baseUrl}${path}`, {
-    ...options,
-    headers: {
-      'content-type': 'application/json',
-      ...(options.headers ?? {})
-    }
+    ...fetchOptions,
+    headers
   });
   const body = await response.json();
   return { response, body };
+}
+
+async function loginSession(baseUrl) {
+  const login = await request(baseUrl, '/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ identifier: 'dev@example.com', password: 'password123' })
+  });
+  return login.body.token;
+}
+
+async function authedRequest(baseUrl, path, options = {}) {
+  const token = options.token ?? (await loginSession(baseUrl));
+  return request(baseUrl, path, {
+    ...options,
+    headers: {
+      authorization: `Bearer ${token}`,
+      ...(options.headers ?? {})
+    }
+  });
 }
 
 async function requestText(baseUrl, path, options = {}) {
@@ -113,14 +137,27 @@ test('auth and dashboard endpoints return account data', async () => {
     assert.equal(login.body.account.email, 'dev@example.com');
     assert.ok(login.body.token);
 
-    const account = await request(baseUrl, '/api/account');
+    const account = await authedRequest(baseUrl, '/api/account', { token: login.body.token });
     assert.equal(account.body.email, 'dev@example.com');
+  });
+});
+
+test('management endpoints reject missing console session tokens', async () => {
+  await withServer(async (baseUrl) => {
+    const account = await request(baseUrl, '/api/account', { auth: false });
+    assert.equal(account.response.status, 401);
+    assert.equal(account.body.error.code, 'unauthorized');
+
+    const health = await request(baseUrl, '/api/health');
+    assert.equal(health.response.status, 200);
   });
 });
 
 test('api keys can be created and toggled persistently', async () => {
   await withServer(async (baseUrl) => {
-    const created = await request(baseUrl, '/api/keys', {
+    const token = await loginSession(baseUrl);
+    const created = await authedRequest(baseUrl, '/api/keys', {
+      token,
       method: 'POST',
       body: JSON.stringify({ name: '集成测试' })
     });
@@ -130,25 +167,27 @@ test('api keys can be created and toggled persistently', async () => {
     assert.equal(created.body.status, 'active');
     assert.match(created.body.secret, /^rh_live_sk_/);
 
-    const updated = await request(baseUrl, `/api/keys/${created.body.id}`, {
+    const updated = await authedRequest(baseUrl, `/api/keys/${created.body.id}`, {
+      token,
       method: 'PATCH',
       body: JSON.stringify({ status: 'disabled' })
     });
     assert.equal(updated.response.status, 200);
     assert.equal(updated.body.status, 'disabled');
 
-    const keys = await request(baseUrl, '/api/keys');
+    const keys = await authedRequest(baseUrl, '/api/keys', { token });
     assert.equal(keys.body[0].status, 'disabled');
   });
 });
 
 test('read endpoints expose models, usage, billing, and docs', async () => {
   await withServer(async (baseUrl) => {
-    const models = await request(baseUrl, '/api/models');
-    const channels = await request(baseUrl, '/api/channels');
-    const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
-    const billing = await request(baseUrl, '/api/billing');
-    const docs = await request(baseUrl, '/api/docs/examples');
+    const token = await loginSession(baseUrl);
+    const models = await authedRequest(baseUrl, '/api/models', { token });
+    const channels = await authedRequest(baseUrl, '/api/channels', { token });
+    const usage = await authedRequest(baseUrl, '/api/usage?model=gpt-4.1-mini', { token });
+    const billing = await authedRequest(baseUrl, '/api/billing', { token });
+    const docs = await authedRequest(baseUrl, '/api/docs/examples', { token });
 
     assert.ok(models.body.some((model) => model.id === 'gpt-4.1-mini'));
     assert.ok(channels.body.some((channel) => channel.status === 'active'));

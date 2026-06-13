@@ -12,13 +12,21 @@ export interface ConsoleData {
   docsExamples: DocsExample[];
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+let consoleSessionToken = '';
+
+async function request<T>(path: string, options?: RequestInit & { auth?: boolean }): Promise<T> {
+  const { auth = true, ...fetchOptions } = options ?? {};
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...((fetchOptions.headers as Record<string, string> | undefined) ?? {})
+  };
+  if (auth && consoleSessionToken) {
+    headers.authorization = `Bearer ${consoleSessionToken}`;
+  }
+
   const response = await fetch(path, {
-    ...options,
-    headers: {
-      'content-type': 'application/json',
-      ...(options?.headers ?? {})
-    }
+    ...fetchOptions,
+    headers
   });
 
   const payload = await response.json();
@@ -32,11 +40,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  login(identifier: string, password: string) {
-    return request<{ token: string; account: Account }>('/api/auth/login', {
+  async login(identifier: string, password: string) {
+    const session = await request<{ token: string; account: Account }>('/api/auth/login', {
+      auth: false,
       method: 'POST',
       body: JSON.stringify({ identifier, password })
     });
+    consoleSessionToken = session.token;
+    return session;
   },
 
   async loadConsoleData(account?: Account): Promise<ConsoleData> {

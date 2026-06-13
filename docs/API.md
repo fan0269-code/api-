@@ -17,6 +17,16 @@
 
 返回服务状态、服务名和时间戳。
 
+## 控制台鉴权
+
+除 `GET /api/health` 和 `POST /api/auth/login` 外，所有 `/api/*` 控制台接口都需要登录返回的会话 token：
+
+```text
+Authorization: Bearer demo-session-token
+```
+
+生产部署可通过 `RELAY_ADMIN_TOKEN` 覆盖默认演示 token。`/v1/*` 中转接口不使用控制台 token，而使用 RelayHub API Key。
+
 ## 登录
 
 `POST /api/auth/login`

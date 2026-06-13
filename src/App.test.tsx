@@ -29,10 +29,15 @@ beforeEach(() => {
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input), 'http://localhost');
       const method = init?.method ?? 'GET';
+      const headers = new Headers(init?.headers);
       const body = init?.body ? JSON.parse(String(init.body)) : {};
 
       if (method === 'POST' && url.pathname === '/api/auth/login') {
         return jsonResponse({ token: 'test-token', account: apiState.account });
+      }
+
+      if (url.pathname.startsWith('/api/') && headers.get('authorization') !== 'Bearer test-token') {
+        return jsonResponse({ error: { code: 'unauthorized', message: 'Valid console session token is required' } }, 401);
       }
 
       if (method === 'GET' && url.pathname === '/api/account') {

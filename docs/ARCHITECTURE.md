@@ -16,7 +16,7 @@ RelayHub 当前版本是可交付的前后端一体化网站，用于演示 API 
 
 1. 用户访问 `/` 查看公开官网。
 2. 用户进入 `/login` 并提交登录表单。
-3. 前端调用 `POST /api/auth/login`，随后并行拉取账户、Key、模型、渠道、用量、账单和文档示例。
+3. 前端调用 `POST /api/auth/login` 获取控制台会话 token，随后并行拉取账户、Key、模型、渠道、用量、账单和文档示例。
 4. 控制台页面通过 React 状态渲染后端数据。
 5. 创建或停用 API Key 时，前端调用后端接口，后端写入 `server/data/db.json`；Key 同时包含月配额、已用额度和 RPM 限制。
 6. 控制台通过 `/api/channels` 展示上游渠道，通过 `PATCH /api/channels/:id` 启用或停用渠道。
@@ -70,6 +70,7 @@ HOST=127.0.0.1 PORT=8787 npm run server
 ## 稳定性措施
 
 - `/api/health` 用于健康检查。
+- 除健康检查和登录外，控制台 `/api/*` 接口要求 Bearer 会话 token；`/v1/*` 中转接口使用独立 RelayHub API Key。
 - API 错误响应使用统一 `{ error: { code, message } }` 结构。
 - 请求体限制为 64KB，避免异常大请求影响服务。
 - `/v1/chat/completions` 使用每 Key 的月配额和进程内 RPM 窗口限制，超限时在请求上游前拒绝。
