@@ -121,3 +121,41 @@ describe('keys and models', () => {
     expect(screen.getByText('维护')).toBeInTheDocument();
   });
 });
+
+describe('usage billing and docs', () => {
+  it('filters usage by model and shows an empty state', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: '用量统计' }));
+    await userEvent.selectOptions(screen.getByLabelText('按模型筛选'), 'no-results');
+
+    expect(screen.getByText('没有匹配的用量数据')).toBeInTheDocument();
+  });
+
+  it('shows low balance warning and docs examples', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: '账单余额' }));
+    expect(screen.getByText('余额低于预警阈值')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: '接入文档' }));
+    expect(screen.getByText('curl')).toBeInTheDocument();
+    expect(screen.getByText('Node.js')).toBeInTheDocument();
+    expect(screen.getByText('Python')).toBeInTheDocument();
+    expect(screen.getByText('insufficient_balance')).toBeInTheDocument();
+  });
+});

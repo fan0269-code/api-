@@ -479,6 +479,45 @@ pre {
   background: #eff6ff;
 }
 
+.filter-control {
+  display: inline-grid;
+  gap: 6px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.usage-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.usage-row {
+  display: grid;
+  grid-template-columns: 54px minmax(120px, 1fr) minmax(120px, 2fr) 86px 72px 56px;
+  gap: 10px;
+  align-items: center;
+}
+
+.warning-note,
+.warning-card {
+  border-color: #fecaca;
+  background: #fff7ed;
+}
+
+.warning-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.positive {
+  color: #166534;
+}
+
+.negative {
+  color: #991b1b;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -564,7 +603,8 @@ pre {
 
   .three-grid,
   .two-grid,
-  .login-page {
+  .login-page,
+  .usage-row {
     grid-template-columns: 1fr;
   }
 
