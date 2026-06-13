@@ -24,7 +24,7 @@ export function SectionHeader({ eyebrow, title, action }: { eyebrow?: string; ti
 
 export function MetricCard({ label, value, detail, icon }: { label: string; value: string; detail?: string; icon?: ReactNode }) {
   return (
-    <article className="metric-card">
+    <article className="metric-card magic-surface">
       <div>
         <span className="metric-label">{label}</span>
         <strong>{value}</strong>

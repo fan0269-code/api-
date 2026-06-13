@@ -54,6 +54,17 @@ describe('shared UI', () => {
 });
 
 describe('login and overview', () => {
+  it('adds restrained Magic UI-inspired surfaces to the login experience', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(container.querySelector('.animated-grid-pattern')).toBeInTheDocument();
+    expect(container.querySelector('.magic-panel')).toBeInTheDocument();
+  });
+
   it('shows validation when login fields are empty', async () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
@@ -67,7 +78,7 @@ describe('login and overview', () => {
   });
 
   it('shows balanced overview modules after login', async () => {
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={['/login']}>
         <App />
       </MemoryRouter>
@@ -81,6 +92,7 @@ describe('login and overview', () => {
     expect(screen.getByText('运行状态')).toBeInTheDocument();
     expect(screen.getByText('账户余额')).toBeInTheDocument();
     expect(screen.getByText('https://api.relayhub.dev/v1')).toBeInTheDocument();
+    expect(container.querySelectorAll('.magic-surface')).toHaveLength(3);
   });
 });
 

@@ -25,6 +25,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
 
   return (
     <main className="login-page">
+      <div className="animated-grid-pattern" aria-hidden="true" />
       <section className="login-copy">
         <span className="eyebrow">Unified AI Gateway</span>
         <h1>RelayHub API 中转站</h1>
@@ -36,7 +37,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
           <span>可靠交付</span>
         </div>
       </section>
-      <form className="login-panel" onSubmit={submit}>
+      <form className="login-panel magic-panel" onSubmit={submit}>
         <div className="login-switch" role="group" aria-label="登录注册切换">
           <button className={mode === 'login' ? 'active' : ''} type="button" onClick={() => setMode('login')} aria-label="切换到登录">
             登录

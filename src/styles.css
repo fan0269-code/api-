@@ -12,6 +12,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 button,
@@ -171,9 +172,58 @@ button {
 }
 
 .metric-card {
+  position: relative;
   justify-content: space-between;
   gap: 14px;
   padding: 16px;
+  overflow: hidden;
+}
+
+.magic-surface,
+.magic-panel {
+  position: relative;
+  isolation: isolate;
+}
+
+.magic-surface::before,
+.magic-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(20, 184, 166, 0.16), transparent 30%),
+    radial-gradient(circle at 84% 20%, rgba(245, 158, 11, 0.14), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.78));
+}
+
+.magic-surface::after,
+.magic-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: 0.9;
+  background: linear-gradient(120deg, rgba(20, 184, 166, 0.46), rgba(37, 99, 235, 0.22), rgba(245, 158, 11, 0.5));
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.magic-surface:hover::before,
+.magic-panel:focus-within::before,
+.magic-panel:hover::before {
+  opacity: 1;
+}
+
+.magic-surface > *,
+.magic-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .metric-card strong {
@@ -321,13 +371,35 @@ pre {
 }
 
 .login-page {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
   gap: 36px;
   align-items: center;
   min-height: 100vh;
   padding: 24px;
-  background: #eef2f7;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(20, 184, 166, 0.16), transparent 28%),
+    radial-gradient(circle at 86% 24%, rgba(245, 158, 11, 0.14), transparent 30%),
+    #eef2f7;
+}
+
+.animated-grid-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: grid-drift 18s linear infinite;
+  mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
+}
+
+.login-page > *:not(.animated-grid-pattern) {
+  position: relative;
 }
 
 .login-copy {
@@ -362,6 +434,7 @@ pre {
 
 .login-panel {
   width: min(460px, 100%);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
 }
 
 .login-switch {
@@ -432,7 +505,7 @@ pre {
 .bar-fill {
   height: 100%;
   border-radius: inherit;
-  background: #2563eb;
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
 }
 
 .spend-list {
@@ -632,5 +705,26 @@ pre {
 
   .login-copy h1 {
     font-size: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-grid-pattern {
+    animation: none;
+  }
+
+  .magic-surface::before,
+  .magic-panel::before {
+    transition: none;
+  }
+}
+
+@keyframes grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 42px 42px, 42px 42px;
   }
 }
