@@ -1,4 +1,4 @@
-import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, UsagePoint } from '../types';
+import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, RequestLog, UsagePoint } from '../types';
 
 export const relayBaseUrl = 'https://api.relayhub.dev/v1';
 
@@ -8,6 +8,7 @@ export interface ConsoleData {
   models: ModelInfo[];
   channels: ChannelInfo[];
   usageSeries: UsagePoint[];
+  requestLogs: RequestLog[];
   billingRecords: BillingRecord[];
   docsExamples: DocsExample[];
 }
@@ -51,17 +52,18 @@ export const api = {
   },
 
   async loadConsoleData(account?: Account): Promise<ConsoleData> {
-    const [loadedAccount, keys, models, channels, usageSeries, billingRecords, docsExamples] = await Promise.all([
+    const [loadedAccount, keys, models, channels, usageSeries, requestLogs, billingRecords, docsExamples] = await Promise.all([
       account ? Promise.resolve(account) : request<Account>('/api/account'),
       request<ApiKey[]>('/api/keys'),
       request<ModelInfo[]>('/api/models'),
       request<ChannelInfo[]>('/api/channels'),
       request<UsagePoint[]>('/api/usage'),
+      request<RequestLog[]>('/api/requests'),
       request<BillingRecord[]>('/api/billing'),
       request<DocsExample[]>('/api/docs/examples')
     ]);
 
-    return { account: loadedAccount, keys, models, channels, usageSeries, billingRecords, docsExamples };
+    return { account: loadedAccount, keys, models, channels, usageSeries, requestLogs, billingRecords, docsExamples };
   },
 
   createKey(name: string) {

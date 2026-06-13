@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, CreditCard, KeyRound, LogOut, Network, PanelsTopLeft, RadioTower } from 'lucide-react';
+import { BarChart3, BookOpen, CreditCard, KeyRound, ListChecks, LogOut, Network, PanelsTopLeft, RadioTower } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router';
 import type { Account } from '../types';
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/models', label: '模型接口', icon: Network },
   { to: '/channels', label: '渠道管理', icon: RadioTower },
   { to: '/usage', label: '用量统计', icon: BarChart3 },
+  { to: '/requests', label: '调用日志', icon: ListChecks },
   { to: '/billing', label: '账单余额', icon: CreditCard },
   { to: '/docs', label: '接入文档', icon: BookOpen }
 ];

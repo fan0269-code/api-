@@ -138,6 +138,16 @@ Authorization: Bearer demo-session-token
 
 按模型过滤用量。
 
+## 调用日志
+
+`GET /api/requests`
+
+返回最近 100 条调用日志，包含时间、Key 名称、脱敏 Key、模型、状态、是否流式、Token、成本和延迟。
+
+`GET /api/requests?model=gpt-4.1-mini`
+
+按模型过滤调用日志。后端最多保留最近 200 条成功中转日志，用于控制台排查和演示验收。
+
 ## 账单
 
 `GET /api/billing`

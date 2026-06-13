@@ -64,6 +64,9 @@ function createStore(dataDir) {
     if (!Array.isArray(data.channels)) {
       data.channels = structuredClone(seedData.channels);
     }
+    if (!Array.isArray(data.requestLogs)) {
+      data.requestLogs = structuredClone(seedData.requestLogs);
+    }
     if (Array.isArray(data.apiKeys)) {
       data.apiKeys = data.apiKeys.map((key, index) => ({
         monthlyQuota: seedData.apiKeys[index]?.monthlyQuota ?? 50,
@@ -243,7 +246,7 @@ function recordRelayUsage(data, { model, cost, latencyMs }) {
   });
 }
 
-async function recordRelaySuccess(store, { token, model, totalTokens, latencyMs }) {
+async function recordRelaySuccess(store, { token, model, totalTokens, latencyMs, stream }) {
   await store.update((data) => {
     const key = data.apiKeys.find((item) => item.secret === token);
     if (!key || key.status !== 'active') {
@@ -251,6 +254,19 @@ async function recordRelaySuccess(store, { token, model, totalTokens, latencyMs 
     }
     const cost = Number(((totalTokens / 1000) * 0.002).toFixed(4));
     recordRelayUsage(data, { model, cost, latencyMs });
+    data.requestLogs.unshift({
+      id: `req_${Date.now().toString(36)}`,
+      timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      keyName: key.name,
+      maskedKey: key.maskedKey,
+      model,
+      status: 'success',
+      stream,
+      tokens: totalTokens,
+      cost,
+      latencyMs
+    });
+    data.requestLogs = data.requestLogs.slice(0, 200);
     key.monthlyUsed = Number((Number(key.monthlyUsed ?? 0) + cost).toFixed(4));
     key.lastUsedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   });
@@ -505,6 +521,13 @@ async function handleApi(req, res, store, adminToken) {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/requests') {
+    const model = searchParams.get('model');
+    const logs = model && model !== 'all' ? data.requestLogs.filter((log) => log.model === model) : data.requestLogs;
+    sendJson(res, 200, logs.slice(0, 100));
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/billing') {
     sendJson(res, 200, data.billingRecords);
     return;
@@ -625,7 +648,8 @@ async function handleRelay(req, res, store, relayConfig, rateLimiter) {
       token,
       model: modelId,
       totalTokens,
-      latencyMs: Math.max(1, Date.now() - started)
+      latencyMs: Math.max(1, Date.now() - started),
+      stream: true
     });
     res.end();
     return;
@@ -643,7 +667,8 @@ async function handleRelay(req, res, store, relayConfig, rateLimiter) {
     token,
     model: modelId,
     totalTokens: getCompletionTotalTokens(completion, messages),
-    latencyMs: Math.max(1, Date.now() - started)
+    latencyMs: Math.max(1, Date.now() - started),
+    stream: false
   });
 
   sendJson(res, 200, completion);

@@ -1,4 +1,4 @@
-import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, UsagePoint } from '../types';
+import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, RequestLog, UsagePoint } from '../types';
 
 export const baseUrl = 'https://api.relayhub.dev/v1';
 
@@ -107,6 +107,45 @@ export const usageSeries: UsagePoint[] = [
   { date: '06-11', model: 'deepseek-chat', calls: 2800, cost: 2.8, errorRate: 1.7, latencyMs: 760 },
   { date: '06-12', model: 'gpt-4.1-mini', calls: 6900, cost: 13.8, errorRate: 0.5, latencyMs: 630 },
   { date: '06-13', model: 'gemini-2.5-flash', calls: 12900, cost: 16.72, errorRate: 0.3, latencyMs: 540 }
+];
+
+export const requestLogs: RequestLog[] = [
+  {
+    id: 'req_1004',
+    timestamp: '2026-06-13 09:48',
+    keyName: '生产环境',
+    maskedKey: 'rh_live_••••••••••••8K2A',
+    model: 'gpt-4.1-mini',
+    status: 'success',
+    stream: true,
+    tokens: 1820,
+    cost: 0.0036,
+    latencyMs: 642
+  },
+  {
+    id: 'req_1003',
+    timestamp: '2026-06-13 09:42',
+    keyName: '生产环境',
+    maskedKey: 'rh_live_••••••••••••8K2A',
+    model: 'gemini-2.5-flash',
+    status: 'success',
+    stream: false,
+    tokens: 940,
+    cost: 0.0019,
+    latencyMs: 528
+  },
+  {
+    id: 'req_1002',
+    timestamp: '2026-06-12 18:22',
+    keyName: '测试环境',
+    maskedKey: 'rh_test_••••••••••••Q91P',
+    model: 'claude-3.7-sonnet',
+    status: 'success',
+    stream: false,
+    tokens: 3200,
+    cost: 0.0064,
+    latencyMs: 884
+  }
 ];
 
 export const billingRecords: BillingRecord[] = [

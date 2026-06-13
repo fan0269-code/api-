@@ -186,12 +186,15 @@ test('read endpoints expose models, usage, billing, and docs', async () => {
     const models = await authedRequest(baseUrl, '/api/models', { token });
     const channels = await authedRequest(baseUrl, '/api/channels', { token });
     const usage = await authedRequest(baseUrl, '/api/usage?model=gpt-4.1-mini', { token });
+    const requests = await authedRequest(baseUrl, '/api/requests?model=gpt-4.1-mini', { token });
     const billing = await authedRequest(baseUrl, '/api/billing', { token });
     const docs = await authedRequest(baseUrl, '/api/docs/examples', { token });
 
     assert.ok(models.body.some((model) => model.id === 'gpt-4.1-mini'));
     assert.ok(channels.body.some((channel) => channel.status === 'active'));
     assert.ok(usage.body.every((point) => point.model === 'gpt-4.1-mini'));
+    assert.ok(requests.body.every((log) => log.model === 'gpt-4.1-mini'));
+    assert.ok(requests.body.some((log) => log.maskedKey.includes('••••')));
     assert.ok(billing.body.some((record) => record.type === 'recharge'));
     assert.deepEqual(docs.body.map((example) => example.language), ['curl', 'Node.js', 'Python']);
   });
@@ -285,6 +288,13 @@ test('chat completions accepts active relay keys and records usage', async () =>
     const updatedKeys = await request(baseUrl, '/api/keys');
     const updatedKey = updatedKeys.body.find((key) => key.id === activeKey.id);
     assert.ok(updatedKey.monthlyUsed >= previousUsed);
+
+    const requests = await request(baseUrl, '/api/requests?model=gpt-4.1-mini');
+    assert.equal(requests.body[0].model, 'gpt-4.1-mini');
+    assert.equal(requests.body[0].keyName, activeKey.name);
+    assert.equal(requests.body[0].status, 'success');
+    assert.equal(requests.body[0].stream, false);
+    assert.ok(requests.body[0].tokens > 0);
   });
 });
 
@@ -311,6 +321,9 @@ test('chat completions supports mock streaming responses and records usage', asy
 
     const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
     assert.ok(usage.body.some((point) => point.source === 'relay'));
+
+    const requests = await request(baseUrl, '/api/requests?model=gpt-4.1-mini');
+    assert.equal(requests.body[0].stream, true);
   });
 });
 

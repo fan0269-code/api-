@@ -58,6 +58,19 @@ export interface UsagePoint {
   latencyMs: number;
 }
 
+export interface RequestLog {
+  id: string;
+  timestamp: string;
+  keyName: string;
+  maskedKey: string;
+  model: string;
+  status: 'success' | 'error';
+  stream: boolean;
+  tokens: number;
+  cost: number;
+  latencyMs: number;
+}
+
 export interface BillingRecord {
   id: string;
   date: string;

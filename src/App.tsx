@@ -1,12 +1,13 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import { useMemo, useState } from 'react';
-import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, ToastMessage, UsagePoint } from './types';
+import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, RequestLog, ToastMessage, UsagePoint } from './types';
 import { Shell } from './components/Shell';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ApiKeysPage } from './pages/ApiKeysPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { UsagePage } from './pages/UsagePage';
+import { RequestsPage } from './pages/RequestsPage';
 import { BillingPage } from './pages/BillingPage';
 import { DocsPage } from './pages/DocsPage';
 import { ChannelsPage } from './pages/ChannelsPage';
@@ -20,6 +21,7 @@ interface ConsoleState {
   models: ModelInfo[];
   channels: ChannelInfo[];
   usageSeries: UsagePoint[];
+  requestLogs: RequestLog[];
   billingRecords: BillingRecord[];
   docsExamples: DocsExample[];
 }
@@ -137,6 +139,10 @@ export default function App() {
                     }
                   />
                   <Route path="/usage" element={<UsagePage models={consoleState.models} usageSeries={consoleState.usageSeries} />} />
+                  <Route
+                    path="/requests"
+                    element={<RequestsPage models={consoleState.models} requestLogs={consoleState.requestLogs} />}
+                  />
                   <Route
                     path="/billing"
                     element={

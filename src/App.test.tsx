@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 import { CopyButton, StatusBadge } from './components/ui';
-import { account, apiKeys, billingRecords, channels, docsExamples, models, usageSeries } from './data/mock';
+import { account, apiKeys, billingRecords, channels, docsExamples, models, requestLogs, usageSeries } from './data/mock';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -21,6 +21,7 @@ beforeEach(() => {
     channels: structuredClone(channels),
     docsExamples: structuredClone(docsExamples),
     models: structuredClone(models),
+    requestLogs: structuredClone(requestLogs),
     usageSeries: structuredClone(usageSeries)
   };
 
@@ -101,6 +102,11 @@ beforeEach(() => {
         return jsonResponse(model && model !== 'all' ? apiState.usageSeries.filter((point) => point.model === model) : apiState.usageSeries);
       }
 
+      if (method === 'GET' && url.pathname === '/api/requests') {
+        const model = url.searchParams.get('model');
+        return jsonResponse(model && model !== 'all' ? apiState.requestLogs.filter((log) => log.model === model) : apiState.requestLogs);
+      }
+
       if (method === 'GET' && url.pathname === '/api/billing') {
         return jsonResponse(apiState.billingRecords);
       }
@@ -139,6 +145,7 @@ describe('mock data', () => {
     expect(apiKeys[0].monthlyQuota).toBeGreaterThan(apiKeys[0].monthlyUsed);
     expect(models.map((model) => model.status)).toContain('available');
     expect(channels.some((channel) => channel.status === 'active')).toBe(true);
+    expect(requestLogs.some((log) => log.stream)).toBe(true);
     expect(usageSeries.length).toBeGreaterThanOrEqual(6);
     expect(billingRecords.length).toBeGreaterThanOrEqual(4);
     expect(docsExamples.map((example) => example.language)).toEqual(['curl', 'Node.js', 'Python']);
@@ -315,6 +322,28 @@ describe('usage billing and docs', () => {
     await userEvent.selectOptions(screen.getByLabelText('按模型筛选'), 'no-results');
 
     expect(screen.getByText('没有匹配的用量数据')).toBeInTheDocument();
+  });
+
+  it('shows request logs and filters them by model', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: '调用日志' }));
+
+    expect(screen.getByRole('heading', { name: '调用日志' })).toBeInTheDocument();
+    expect(screen.getAllByText('生产环境').length).toBeGreaterThan(0);
+    expect(screen.getByText('流式')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText('按模型筛选'), 'claude-3.7-sonnet');
+    const requestTable = screen.getByRole('table');
+    expect(within(requestTable).getByText('claude-3.7-sonnet')).toBeInTheDocument();
+    expect(within(requestTable).queryByText('gemini-2.5-flash')).not.toBeInTheDocument();
   });
 
   it('recharges balance and shows docs examples', async () => {

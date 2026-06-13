@@ -103,6 +103,44 @@ export const seedData = {
     { date: '06-12', model: 'gpt-4.1-mini', calls: 6900, cost: 13.8, errorRate: 0.5, latencyMs: 630 },
     { date: '06-13', model: 'gemini-2.5-flash', calls: 12900, cost: 16.72, errorRate: 0.3, latencyMs: 540 }
   ],
+  requestLogs: [
+    {
+      id: 'req_1004',
+      timestamp: '2026-06-13 09:48',
+      keyName: '生产环境',
+      maskedKey: 'rh_live_••••••••••••8K2A',
+      model: 'gpt-4.1-mini',
+      status: 'success',
+      stream: true,
+      tokens: 1820,
+      cost: 0.0036,
+      latencyMs: 642
+    },
+    {
+      id: 'req_1003',
+      timestamp: '2026-06-13 09:42',
+      keyName: '生产环境',
+      maskedKey: 'rh_live_••••••••••••8K2A',
+      model: 'gemini-2.5-flash',
+      status: 'success',
+      stream: false,
+      tokens: 940,
+      cost: 0.0019,
+      latencyMs: 528
+    },
+    {
+      id: 'req_1002',
+      timestamp: '2026-06-12 18:22',
+      keyName: '测试环境',
+      maskedKey: 'rh_test_••••••••••••Q91P',
+      model: 'claude-3.7-sonnet',
+      status: 'success',
+      stream: false,
+      tokens: 3200,
+      cost: 0.0064,
+      latencyMs: 884
+    }
+  ],
   billingRecords: [
     { id: 'bill_104', date: '2026-06-13', type: 'usage', description: '今日模型调用消费', amount: -16.72, balanceAfter: 128.6 },
     { id: 'bill_103', date: '2026-06-12', type: 'usage', description: 'API 调用消费', amount: -13.8, balanceAfter: 145.32 },
