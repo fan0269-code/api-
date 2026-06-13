@@ -83,3 +83,41 @@ describe('login and overview', () => {
     expect(screen.getByText('https://api.relayhub.dev/v1')).toBeInTheDocument();
   });
 });
+
+describe('keys and models', () => {
+  it('creates a new API key from the keys page', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'API Keys' }));
+    await userEvent.click(screen.getByRole('button', { name: '创建 API Key' }));
+    await userEvent.type(screen.getByLabelText('Key 名称'), '本地开发');
+    await userEvent.click(screen.getByRole('button', { name: '创建并显示密钥' }));
+
+    expect(screen.getByText('本地开发')).toBeInTheDocument();
+    expect(screen.getByText(/rh_live_sk_new_/)).toBeInTheDocument();
+  });
+
+  it('shows model statuses and endpoint base URL', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('邮箱或手机号'), 'dev@example.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.click(await screen.findByRole('link', { name: '模型接口' }));
+
+    expect(screen.getByText('OpenAI 兼容接口')).toBeInTheDocument();
+    expect(screen.getByText('gpt-4.1-mini')).toBeInTheDocument();
+    expect(screen.getByText('维护')).toBeInTheDocument();
+  });
+});

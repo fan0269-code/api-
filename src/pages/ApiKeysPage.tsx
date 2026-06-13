@@ -1,10 +1,140 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
+import { CopyButton, Modal, SectionHeader, StatusBadge } from '../components/ui';
 import type { ApiKey, ToastMessage } from '../types';
 
-export function ApiKeysPage(_props: {
+export function ApiKeysPage({
+  keys,
+  setKeys,
+  pushToast
+}: {
   keys: ApiKey[];
   setKeys: Dispatch<SetStateAction<ApiKey[]>>;
   pushToast: (kind: ToastMessage['kind'], text: string) => void;
 }) {
-  return <section className="page-section">API Keys</section>;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [newSecret, setNewSecret] = useState('');
+
+  const handleCopy = (ok: boolean) => {
+    pushToast(ok ? 'success' : 'error', ok ? '已复制到剪贴板' : '复制失败，请手动复制');
+  };
+
+  const createKey = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('请输入 Key 名称');
+      return;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const secret = `rh_live_sk_new_${suffix}`;
+    const key: ApiKey = {
+      id: `key_${Date.now()}`,
+      name: trimmed,
+      maskedKey: `rh_live_••••••••••••${suffix.slice(-4)}`,
+      secret,
+      status: 'active',
+      scopes: ['chat', 'embeddings'],
+      createdAt: '2026-06-13',
+      lastUsedAt: '刚刚'
+    };
+
+    setKeys((current) => [key, ...current]);
+    setNewSecret(secret);
+    setError('');
+    setName('');
+    pushToast('success', 'API Key 已创建');
+  };
+
+  const toggleStatus = (id: string) => {
+    setKeys((current) =>
+      current.map((key) => (key.id === id ? { ...key, status: key.status === 'active' ? 'disabled' : 'active' } : key))
+    );
+  };
+
+  return (
+    <section className="page-grid">
+      <SectionHeader
+        eyebrow="Credentials"
+        title="API Keys"
+        action={
+          <button className="button-primary" type="button" onClick={() => setIsModalOpen(true)}>
+            创建 API Key
+          </button>
+        }
+      />
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>Key</th>
+              <th>权限</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>最近使用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {keys.map((key) => (
+              <tr key={key.id}>
+                <td>{key.name}</td>
+                <td>
+                  <code>{key.maskedKey}</code>
+                </td>
+                <td>{key.scopes.join(', ')}</td>
+                <td>
+                  <StatusBadge status={key.status} />
+                </td>
+                <td>{key.createdAt}</td>
+                <td>{key.lastUsedAt}</td>
+                <td>
+                  <div className="row-actions">
+                    <CopyButton value={key.secret ?? key.maskedKey} label="复制" onDone={handleCopy} />
+                    <button className="button-secondary" type="button" onClick={() => toggleStatus(key.id)}>
+                      {key.status === 'active' ? '停用' : '启用'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isModalOpen ? (
+        <Modal
+          title="创建 API Key"
+          onClose={() => setIsModalOpen(false)}
+          footer={
+            <>
+              <button className="button-secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                关闭
+              </button>
+              <button className="button-primary" type="button" onClick={createKey}>
+                创建并显示密钥
+              </button>
+            </>
+          }
+        >
+          <div className="form-field">
+            <label htmlFor="keyName">Key 名称</label>
+            <input id="keyName" value={name} onChange={(event) => setName(event.target.value)} placeholder="例如：本地开发" />
+            {error ? <span className="field-error">{error}</span> : null}
+          </div>
+          {newSecret ? (
+            <div className="secret-box">
+              <span>请立即保存，关闭后仅显示脱敏 Key。</span>
+              <code>{newSecret}</code>
+              <CopyButton value={newSecret} label="复制新密钥" onDone={handleCopy} />
+            </div>
+          ) : null}
+        </Modal>
+      ) : null}
+    </section>
+  );
 }

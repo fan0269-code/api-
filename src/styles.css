@@ -445,6 +445,40 @@ pre {
   border: 0;
 }
 
+.row-actions,
+.endpoint-copy,
+.secret-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.endpoint-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.endpoint-card h3 {
+  margin: 4px 0;
+}
+
+.endpoint-copy code,
+.secret-box code {
+  overflow-wrap: anywhere;
+}
+
+.secret-box {
+  align-items: flex-start;
+  flex-direction: column;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px;
+  background: #eff6ff;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -522,7 +556,8 @@ pre {
   }
 
   .topbar,
-  .account-pill {
+  .account-pill,
+  .endpoint-card {
     align-items: flex-start;
     flex-direction: column;
   }
