@@ -257,11 +257,16 @@ button {
 .button-secondary,
 .icon-text-button,
 .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
   border-radius: 8px;
   min-height: 38px;
   padding: 0 14px;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .button-primary {
@@ -274,12 +279,6 @@ button {
 .icon-button {
   background: #eef2f7;
   color: #172033;
-}
-
-.icon-text-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .icon-button {
@@ -368,6 +367,344 @@ pre {
 .field-error,
 .warning {
   color: #b91c1c;
+}
+
+.marketing-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(20, 184, 166, 0.14), transparent 28%),
+    radial-gradient(circle at 88% 10%, rgba(245, 158, 11, 0.14), transparent 26%),
+    #f7fafc;
+}
+
+.marketing-nav,
+.marketing-hero,
+.marketing-section,
+.marketing-footer {
+  width: min(1160px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.marketing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0;
+}
+
+.marketing-brand,
+.marketing-links,
+.hero-actions,
+.hero-stats,
+.console-toolbar,
+.logo-strip,
+.pricing-card p,
+.integration-list div,
+.trust-grid span,
+.marketing-footer {
+  display: flex;
+  align-items: center;
+}
+
+.marketing-brand {
+  gap: 10px;
+  color: #172033;
+  text-decoration: none;
+}
+
+.marketing-links {
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.marketing-links a {
+  color: #475569;
+  text-decoration: none;
+}
+
+.marketing-links a:hover {
+  color: #172033;
+}
+
+.marketing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  gap: 42px;
+  align-items: center;
+  min-height: calc(100vh - 92px);
+  padding: 42px 0 64px;
+}
+
+.hero-copy h1 {
+  margin: 12px 0 16px;
+  max-width: 680px;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.hero-copy p,
+.marketing-section p,
+.ide-preview p {
+  color: #475569;
+  line-height: 1.75;
+}
+
+.hero-copy p {
+  max-width: 680px;
+  font-size: 18px;
+}
+
+.hero-actions {
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.hero-actions .button-primary,
+.hero-actions .button-secondary {
+  min-height: 44px;
+}
+
+.hero-stats {
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 34px;
+}
+
+.hero-stats div {
+  min-width: 132px;
+  padding: 12px 14px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.hero-stats strong {
+  display: block;
+  font-size: 22px;
+}
+
+.hero-stats span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.hero-console {
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.14);
+}
+
+.console-toolbar {
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.console-toolbar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.console-line {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.console-line span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.console-line code {
+  overflow-wrap: anywhere;
+}
+
+.marketing-section {
+  padding: 54px 0;
+}
+
+.section-title {
+  max-width: 680px;
+  margin-bottom: 22px;
+}
+
+.section-title h2,
+.marketing-section h2 {
+  margin: 8px 0 0;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.logo-strip {
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.logo-strip span {
+  padding: 10px 14px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.feature-card,
+.pricing-card,
+.ide-preview {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.feature-card h3,
+.pricing-card h3 {
+  margin: 14px 0 8px;
+}
+
+.split-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.model-ladder {
+  display: grid;
+  gap: 12px;
+}
+
+.model-step {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.model-step span,
+.model-step small {
+  color: #64748b;
+}
+
+.model-step strong {
+  font-size: 20px;
+}
+
+.ide-preview {
+  min-height: 220px;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08)),
+    #ffffff;
+}
+
+.ide-preview strong {
+  display: block;
+  margin-top: 16px;
+  font-size: 24px;
+}
+
+.integration-list {
+  display: grid;
+  gap: 12px;
+}
+
+.integration-list div {
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pricing-card strong {
+  display: block;
+  margin: 4px 0 16px;
+  font-size: 30px;
+}
+
+.pricing-card p {
+  gap: 8px;
+  margin: 10px 0;
+  color: #475569;
+}
+
+.pricing-card .button-secondary {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.plan-badge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #ecfeff;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.trust-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trust-grid span {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.marketing-footer {
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 28px 0 42px;
+  color: #64748b;
+}
+
+.marketing-footer a {
+  color: #2563eb;
+  text-decoration: none;
 }
 
 .login-page {

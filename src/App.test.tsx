@@ -18,6 +18,22 @@ describe('mock data', () => {
 });
 
 describe('authentication shell', () => {
+  it('shows a public marketing homepage before login', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: '企业级 AI API 中转站' })).toBeInTheDocument();
+    expect(screen.getByText('一站式多模型 API 网关')).toBeInTheDocument();
+    expect(screen.getByText('选择您的接入方案')).toBeInTheDocument();
+    expect(screen.getByText('受开发团队信赖')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: '登录控制台' }));
+    expect(await screen.findByRole('heading', { name: '登录控制台' })).toBeInTheDocument();
+  });
+
   it('logs in and shows the authenticated sidebar', async () => {
     render(
       <MemoryRouter initialEntries={['/login']}>

@@ -11,6 +11,7 @@ import { UsagePage } from './pages/UsagePage';
 import { BillingPage } from './pages/BillingPage';
 import { DocsPage } from './pages/DocsPage';
 import { ToastStack } from './components/ui';
+import { HomePage } from './pages/HomePage';
 
 export default function App() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function App() {
   return (
     <>
       <Routes>
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
         <Route
           path="/*"
