@@ -52,6 +52,9 @@ beforeEach(() => {
           secret: `rh_live_sk_new_${suffix}`,
           status: 'active' as const,
           scopes: ['chat', 'embeddings'],
+          monthlyQuota: 50,
+          monthlyUsed: 0,
+          rateLimitPerMinute: 60,
           createdAt: '2026-06-13',
           lastUsedAt: '刚刚'
         };
@@ -110,6 +113,7 @@ describe('mock data', () => {
   it('contains records for every console module', () => {
     expect(account.name).toBe('林开发者');
     expect(apiKeys.length).toBeGreaterThanOrEqual(2);
+    expect(apiKeys[0].monthlyQuota).toBeGreaterThan(apiKeys[0].monthlyUsed);
     expect(models.map((model) => model.status)).toContain('available');
     expect(channels.some((channel) => channel.status === 'active')).toBe(true);
     expect(usageSeries.length).toBeGreaterThanOrEqual(6);
@@ -231,6 +235,7 @@ describe('keys and models', () => {
 
     expect(screen.getByText('本地开发')).toBeInTheDocument();
     expect(screen.getByText(/rh_live_sk_new_/)).toBeInTheDocument();
+    expect(screen.getByText('¥0.00 / ¥50.00')).toBeInTheDocument();
   });
 
   it('shows model statuses and endpoint base URL', async () => {

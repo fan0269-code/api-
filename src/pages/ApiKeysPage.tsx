@@ -59,6 +59,8 @@ export function ApiKeysPage({
               <th>名称</th>
               <th>Key</th>
               <th>权限</th>
+              <th>月配额</th>
+              <th>RPM</th>
               <th>状态</th>
               <th>创建时间</th>
               <th>最近使用</th>
@@ -73,6 +75,10 @@ export function ApiKeysPage({
                   <code>{key.maskedKey}</code>
                 </td>
                 <td>{key.scopes.join(', ')}</td>
+                <td>
+                  ¥{key.monthlyUsed.toFixed(2)} / ¥{key.monthlyQuota.toFixed(2)}
+                </td>
+                <td>{key.rateLimitPerMinute}</td>
                 <td>
                   <StatusBadge status={key.status} />
                 </td>

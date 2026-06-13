@@ -171,6 +171,7 @@ test('chat completions accepts active relay keys and records usage', async () =>
   await withServer(async (baseUrl) => {
     const keys = await request(baseUrl, '/api/keys');
     const activeKey = keys.body.find((key) => key.status === 'active');
+    const previousUsed = activeKey.monthlyUsed;
 
     const completion = await request(baseUrl, '/v1/chat/completions', {
       method: 'POST',
@@ -189,6 +190,63 @@ test('chat completions accepts active relay keys and records usage', async () =>
 
     const usage = await request(baseUrl, '/api/usage?model=gpt-4.1-mini');
     assert.ok(usage.body.some((point) => point.source === 'relay'));
+
+    const updatedKeys = await request(baseUrl, '/api/keys');
+    const updatedKey = updatedKeys.body.find((key) => key.id === activeKey.id);
+    assert.ok(updatedKey.monthlyUsed >= previousUsed);
+  });
+});
+
+test('chat completions rejects keys that exhausted monthly quota', async () => {
+  await withServer(async (baseUrl) => {
+    const keys = await request(baseUrl, '/api/keys');
+    const exhaustedKey = keys.body.find((key) => key.id === 'key_test');
+
+    const completion = await request(baseUrl, '/v1/chat/completions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${exhaustedKey.secret}` },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [{ role: 'user', content: 'Hello' }]
+      })
+    });
+
+    assert.equal(completion.response.status, 402);
+    assert.equal(completion.body.error.code, 'quota_exceeded');
+  });
+});
+
+test('chat completions enforces per-key rate limits', async () => {
+  await withServer(async (baseUrl) => {
+    const created = await request(baseUrl, '/api/keys', {
+      method: 'POST',
+      body: JSON.stringify({ name: '限流测试' })
+    });
+
+    const first = await request(baseUrl, '/v1/chat/completions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${created.body.secret}` },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [{ role: 'user', content: 'First' }]
+      })
+    });
+    assert.equal(first.response.status, 200);
+
+    const results = [];
+    for (let index = 0; index < created.body.rateLimitPerMinute + 1; index += 1) {
+      results.push(
+        await request(baseUrl, '/v1/chat/completions', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${created.body.secret}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1-mini',
+            messages: [{ role: 'user', content: `Burst ${index}` }]
+          })
+        })
+      );
+    }
+    assert.ok(results.some((result) => result.response.status === 429));
   });
 });
 

@@ -19,6 +19,9 @@ export interface ApiKey {
   secret?: string;
   status: ApiKeyStatus;
   scopes: string[];
+  monthlyQuota: number;
+  monthlyUsed: number;
+  rateLimitPerMinute: number;
   createdAt: string;
   lastUsedAt: string;
 }

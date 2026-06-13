@@ -17,6 +17,9 @@ export const seedData = {
       secret: 'rh_live_sk_8K2A_demo_secret',
       status: 'active',
       scopes: ['chat', 'embeddings'],
+      monthlyQuota: 80,
+      monthlyUsed: 18.4,
+      rateLimitPerMinute: 60,
       createdAt: '2026-06-01',
       lastUsedAt: '2026-06-13 09:48'
     },
@@ -27,6 +30,9 @@ export const seedData = {
       secret: 'rh_test_sk_Q91P_demo_secret',
       status: 'active',
       scopes: ['chat'],
+      monthlyQuota: 10,
+      monthlyUsed: 10,
+      rateLimitPerMinute: 1,
       createdAt: '2026-05-21',
       lastUsedAt: '2026-06-12 18:22'
     },
@@ -37,6 +43,9 @@ export const seedData = {
       secret: 'rh_live_sk_7M3D_demo_secret',
       status: 'disabled',
       scopes: ['legacy'],
+      monthlyQuota: 20,
+      monthlyUsed: 7.35,
+      rateLimitPerMinute: 30,
       createdAt: '2026-04-09',
       lastUsedAt: '2026-05-30 11:03'
     }

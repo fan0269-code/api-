@@ -56,7 +56,7 @@
 
 `GET /api/keys`
 
-返回 API Key 列表。
+返回 API Key 列表，包括脱敏 Key、权限、状态、月配额、已用额度和每分钟请求数限制。
 
 `POST /api/keys`
 
@@ -81,6 +81,18 @@
 ```
 
 `status` 只能是 `active` 或 `disabled`。
+
+新建 Key 默认配置：
+
+```json
+{
+  "monthlyQuota": 50,
+  "monthlyUsed": 0,
+  "rateLimitPerMinute": 60
+}
+```
+
+`/v1/chat/completions` 会在请求上游前检查 Key 状态、月配额和 RPM 限制；成功调用后会把本次估算成本累计到 `monthlyUsed`。
 
 ## 模型
 
@@ -193,7 +205,9 @@ HOST=127.0.0.1 PORT=8787 npm run server
 常见错误：
 
 - `401 invalid_api_key`：缺少或错误的 Bearer Key。
+- `402 quota_exceeded`：Key 的月配额已耗尽。
 - `403 key_disabled`：Key 已停用。
 - `400 validation_error`：缺少 `model` / `messages`，或模型不可用。
+- `429 rate_limit_exceeded`：Key 超过每分钟请求数限制。
 - `503 channel_unavailable`：真实转发模式下没有启用的上游渠道覆盖目标模型。
 - `502 upstream_error`：上游服务异常或返回非预期响应。

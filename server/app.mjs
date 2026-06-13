@@ -62,6 +62,14 @@ function createStore(dataDir) {
     if (!Array.isArray(data.channels)) {
       data.channels = structuredClone(seedData.channels);
     }
+    if (Array.isArray(data.apiKeys)) {
+      data.apiKeys = data.apiKeys.map((key, index) => ({
+        monthlyQuota: seedData.apiKeys[index]?.monthlyQuota ?? 50,
+        monthlyUsed: seedData.apiKeys[index]?.monthlyUsed ?? 0,
+        rateLimitPerMinute: seedData.apiKeys[index]?.rateLimitPerMinute ?? 60,
+        ...key
+      }));
+    }
     return data;
   }
 
@@ -203,6 +211,34 @@ function recordRelayUsage(data, { model, cost, latencyMs }) {
   });
 }
 
+function createRateLimiter() {
+  const buckets = new Map();
+
+  return {
+    check(key) {
+      const limit = Number(key.rateLimitPerMinute ?? 60);
+      if (!Number.isFinite(limit) || limit <= 0) {
+        return { ok: false, retryAfter: 60 };
+      }
+
+      const now = Date.now();
+      const windowMs = 60 * 1000;
+      const bucket = buckets.get(key.id);
+      if (!bucket || now - bucket.startedAt >= windowMs) {
+        buckets.set(key.id, { startedAt: now, count: 1 });
+        return { ok: true };
+      }
+
+      if (bucket.count >= limit) {
+        return { ok: false, retryAfter: Math.max(1, Math.ceil((windowMs - (now - bucket.startedAt)) / 1000)) };
+      }
+
+      bucket.count += 1;
+      return { ok: true };
+    }
+  };
+}
+
 async function serveStatic(req, res, publicDir) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
@@ -285,6 +321,9 @@ async function handleApi(req, res, store) {
         secret,
         status: 'active',
         scopes: ['chat', 'embeddings'],
+        monthlyQuota: 50,
+        monthlyUsed: 0,
+        rateLimitPerMinute: 60,
         createdAt: new Date().toISOString().slice(0, 10),
         lastUsedAt: '刚刚'
       };
@@ -371,7 +410,7 @@ async function handleApi(req, res, store) {
   sendError(res, 404, 'not_found', 'API route not found');
 }
 
-async function handleRelay(req, res, store, relayConfig) {
+async function handleRelay(req, res, store, relayConfig, rateLimiter) {
   const url = new URL(req.url, 'http://localhost');
   if (!(req.method === 'POST' && url.pathname === '/v1/chat/completions')) {
     sendError(res, 404, 'not_found', 'Relay route not found');
@@ -401,6 +440,14 @@ async function handleRelay(req, res, store, relayConfig) {
     }
     if (key.status !== 'active') {
       return { status: 403, error: { code: 'key_disabled', message: 'API key is disabled' } };
+    }
+    if (Number(key.monthlyUsed ?? 0) >= Number(key.monthlyQuota ?? 0)) {
+      return { status: 402, error: { code: 'quota_exceeded', message: 'API key monthly quota has been exhausted' } };
+    }
+
+    const rate = rateLimiter.check(key);
+    if (!rate.ok) {
+      return { status: 429, error: { code: 'rate_limit_exceeded', message: `Rate limit exceeded. Retry after ${rate.retryAfter}s` } };
     }
 
     const model = data.models.find((item) => item.id === modelId);
@@ -442,6 +489,7 @@ async function handleRelay(req, res, store, relayConfig) {
     const totalTokens = getCompletionTotalTokens(completion, messages);
     const cost = Number(((totalTokens / 1000) * 0.002).toFixed(4));
     recordRelayUsage(data, { model: modelId, cost, latencyMs: Math.max(1, Date.now() - started) });
+    key.monthlyUsed = Number((Number(key.monthlyUsed ?? 0) + cost).toFixed(4));
     key.lastUsedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   });
 
@@ -455,6 +503,7 @@ export function createApiServer({
   upstreamApiKey = process.env.RELAY_UPSTREAM_API_KEY
 } = {}) {
   const store = createStore(dataDir);
+  const rateLimiter = createRateLimiter();
   const relayConfig = {
     upstreamBaseUrl: upstreamBaseUrl?.trim(),
     upstreamApiKey: upstreamApiKey?.trim()
@@ -466,7 +515,7 @@ export function createApiServer({
       if (req.url?.startsWith('/api/')) {
         await handleApi(req, res, store);
       } else if (req.url?.startsWith('/v1/')) {
-        await handleRelay(req, res, store, relayConfig);
+        await handleRelay(req, res, store, relayConfig, rateLimiter);
       } else {
         await serveStatic(req, res, publicDir);
       }
