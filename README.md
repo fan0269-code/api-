@@ -31,9 +31,14 @@ http://127.0.0.1:5173/
 ```bash
 npm run verify
 npm run preview:prod
+npm run package:delivery
 ```
 
-`npm run verify` 会执行测试和生产构建，`npm run preview:prod` 用 `dist/` 进行本地生产预览。
+`npm run verify` 会执行测试和生产构建，`npm run preview:prod` 用 `dist/` 进行本地生产预览。`npm run package:delivery` 会生成可移交的压缩包：
+
+```text
+release/relayhub-api-relay-console.tar.gz
+```
 
 ## 部署到腾讯云 CVM
 

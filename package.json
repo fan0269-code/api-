@@ -11,7 +11,8 @@
     "preview:prod": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm test && npm run build"
+    "verify": "npm test && npm run build",
+    "package:delivery": "npm run verify && node scripts/package-delivery.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",
