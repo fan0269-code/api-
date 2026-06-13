@@ -29,12 +29,11 @@ http://127.0.0.1:5173/
 ## 验收命令
 
 ```bash
-npm test
-npm run build
+npm run verify
 npm run preview:prod
 ```
 
-`npm run build` 会生成 `dist/`，`npm run preview:prod` 用生产构建进行本地预览。
+`npm run verify` 会执行测试和生产构建，`npm run preview:prod` 用 `dist/` 进行本地生产预览。
 
 ## 部署到腾讯云 CVM
 
@@ -50,6 +49,12 @@ npm run deploy:tencent
 ```
 
 如果 SSH key 已经加入 `ssh-agent`，可以不设置 `DEPLOY_KEY`。
+
+也可以复制模板后按实际服务器修改：
+
+```bash
+cp deploy/tencent-cloud/.env.example deploy/tencent-cloud/.env.local
+```
 
 Nginx 配置模板在：
 

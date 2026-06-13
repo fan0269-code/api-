@@ -31,6 +31,21 @@ export DEPLOY_KEY="$HOME/.ssh/tencent-cloud.pem"
 
 If your SSH key is already loaded in `ssh-agent`, omit `DEPLOY_KEY`.
 
+You can also copy the environment template:
+
+```bash
+cp deploy/tencent-cloud/.env.example deploy/tencent-cloud/.env.local
+```
+
+Then load it before deploying:
+
+```bash
+set -a
+source deploy/tencent-cloud/.env.local
+set +a
+npm run deploy:tencent
+```
+
 ## Configure Nginx
 
 Copy `nginx-api-relay-console.conf` to the server and adjust:
