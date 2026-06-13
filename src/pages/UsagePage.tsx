@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { BarChart3, Clock, DollarSign, ShieldAlert } from 'lucide-react';
-import { models, usageSeries } from '../data/mock';
 import { EmptyState, MetricCard, SectionHeader } from '../components/ui';
+import type { ModelInfo, UsagePoint } from '../types';
 
-export function UsagePage() {
+export function UsagePage({ models, usageSeries }: { models: ModelInfo[]; usageSeries: UsagePoint[] }) {
   const [selectedModel, setSelectedModel] = useState('all');
 
   const filtered = useMemo(() => {
@@ -75,7 +75,7 @@ export function UsagePage() {
 
       <article className="card warning-note">
         <ShieldAlert size={18} />
-        <span>该页面展示的是本地 mock 数据，用于验证筛选、指标和空状态交互。</span>
+        <span>该页面展示来自后端 API 的用量数据，用于验证筛选、指标和空状态交互。</span>
       </article>
     </section>
   );

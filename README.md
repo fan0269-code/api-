@@ -1,6 +1,6 @@
 # RelayHub API 中转站
 
-RelayHub 是一个可交付的 API 中转站网站原型，包含公开官网首页和登录后的开发者控制台。公开首页参考 AICodeMirror 的产品官网框架组织内容，控制台提供 API Key、模型、用量、账单和接入文档等核心页面。
+RelayHub 是一个可交付的 API 中转站网站，包含公开官网首页、登录后的开发者控制台和 Node.js 后端 API。公开首页参考 AICodeMirror 的产品官网框架组织内容，控制台提供 API Key、模型、用量、账单和接入文档等核心页面。
 
 ## 页面入口
 
@@ -15,9 +15,17 @@ RelayHub 是一个可交付的 API 中转站网站原型，包含公开官网首
 
 ## 本地运行
 
+启动后端 API：
+
 ```bash
 npm install
-npm run dev -- --host 127.0.0.1
+npm run dev:api
+```
+
+另一个终端启动前端：
+
+```bash
+npm run dev:web -- --host 127.0.0.1
 ```
 
 访问：
@@ -73,8 +81,13 @@ deploy/tencent-cloud/nginx-api-relay-console.conf
 deploy/tencent-cloud/README.md
 ```
 
+## 技术文档
+
+- [API 文档](docs/API.md)
+- [架构说明](docs/ARCHITECTURE.md)
+
 ## 当前边界
 
-- 当前版本是前端可交付原型，使用 mock 数据展示业务流程。
-- 登录态仅存在前端内存中，刷新后需要重新登录。
-- 真实 API 中转、用户体系、支付、计费结算和密钥加密存储需要后端服务承接。
+- 当前版本包含前端和后端 API，后端使用 JSON 文件保存演示数据。
+- 登录是演示登录，尚未接入真实用户体系、密码哈希和权限审计。
+- 真实上游模型转发、支付、发票和生产级密钥加密存储需要继续接入外部服务。

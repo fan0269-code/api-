@@ -1,15 +1,16 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import { CopyButton, Modal, SectionHeader, StatusBadge } from '../components/ui';
 import type { ApiKey, ToastMessage } from '../types';
 
 export function ApiKeysPage({
   keys,
-  setKeys,
+  createKey,
+  updateKeyStatus,
   pushToast
 }: {
   keys: ApiKey[];
-  setKeys: Dispatch<SetStateAction<ApiKey[]>>;
+  createKey: (name: string) => Promise<ApiKey>;
+  updateKeyStatus: (id: string, status: ApiKey['status']) => Promise<ApiKey>;
   pushToast: (kind: ToastMessage['kind'], text: string) => void;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,37 +22,22 @@ export function ApiKeysPage({
     pushToast(ok ? 'success' : 'error', ok ? '已复制到剪贴板' : '复制失败，请手动复制');
   };
 
-  const createKey = () => {
+  const handleCreateKey = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setError('请输入 Key 名称');
       return;
     }
 
-    const suffix = Math.random().toString(36).slice(2, 10).toUpperCase();
-    const secret = `rh_live_sk_new_${suffix}`;
-    const key: ApiKey = {
-      id: `key_${Date.now()}`,
-      name: trimmed,
-      maskedKey: `rh_live_••••••••••••${suffix.slice(-4)}`,
-      secret,
-      status: 'active',
-      scopes: ['chat', 'embeddings'],
-      createdAt: '2026-06-13',
-      lastUsedAt: '刚刚'
-    };
-
-    setKeys((current) => [key, ...current]);
-    setNewSecret(secret);
+    const key = await createKey(trimmed);
+    setNewSecret(key.secret ?? key.maskedKey);
     setError('');
     setName('');
     pushToast('success', 'API Key 已创建');
   };
 
-  const toggleStatus = (id: string) => {
-    setKeys((current) =>
-      current.map((key) => (key.id === id ? { ...key, status: key.status === 'active' ? 'disabled' : 'active' } : key))
-    );
+  const toggleStatus = async (key: ApiKey) => {
+    await updateKeyStatus(key.id, key.status === 'active' ? 'disabled' : 'active');
   };
 
   return (
@@ -95,7 +81,7 @@ export function ApiKeysPage({
                 <td>
                   <div className="row-actions">
                     <CopyButton value={key.secret ?? key.maskedKey} label="复制" onDone={handleCopy} />
-                    <button className="button-secondary" type="button" onClick={() => toggleStatus(key.id)}>
+                    <button className="button-secondary" type="button" onClick={() => toggleStatus(key)}>
                       {key.status === 'active' ? '停用' : '启用'}
                     </button>
                   </div>
@@ -115,7 +101,7 @@ export function ApiKeysPage({
               <button className="button-secondary" type="button" onClick={() => setIsModalOpen(false)}>
                 关闭
               </button>
-              <button className="button-primary" type="button" onClick={createKey}>
+              <button className="button-primary" type="button" onClick={handleCreateKey}>
                 创建并显示密钥
               </button>
             </>

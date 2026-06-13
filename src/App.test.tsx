@@ -1,10 +1,94 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 import { CopyButton, StatusBadge } from './components/ui';
 import { account, apiKeys, billingRecords, docsExamples, models, usageSeries } from './data/mock';
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' }
+  });
+}
+
+beforeEach(() => {
+  const apiState = {
+    account: structuredClone(account),
+    keys: structuredClone(apiKeys),
+    billingRecords: structuredClone(billingRecords),
+    docsExamples: structuredClone(docsExamples),
+    models: structuredClone(models),
+    usageSeries: structuredClone(usageSeries)
+  };
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost');
+      const method = init?.method ?? 'GET';
+      const body = init?.body ? JSON.parse(String(init.body)) : {};
+
+      if (method === 'POST' && url.pathname === '/api/auth/login') {
+        return jsonResponse({ token: 'test-token', account: apiState.account });
+      }
+
+      if (method === 'GET' && url.pathname === '/api/account') {
+        return jsonResponse(apiState.account);
+      }
+
+      if (method === 'GET' && url.pathname === '/api/keys') {
+        return jsonResponse(apiState.keys);
+      }
+
+      if (method === 'POST' && url.pathname === '/api/keys') {
+        const suffix = 'TEST1234';
+        const key = {
+          id: 'key_new_test',
+          name: body.name,
+          maskedKey: `rh_live_••••••••••••${suffix.slice(-4)}`,
+          secret: `rh_live_sk_new_${suffix}`,
+          status: 'active' as const,
+          scopes: ['chat', 'embeddings'],
+          createdAt: '2026-06-13',
+          lastUsedAt: '刚刚'
+        };
+        apiState.keys = [key, ...apiState.keys];
+        return jsonResponse(key, 201);
+      }
+
+      if (method === 'PATCH' && url.pathname.startsWith('/api/keys/')) {
+        const id = url.pathname.split('/').pop();
+        const key = apiState.keys.find((item) => item.id === id);
+        if (!key) {
+          return jsonResponse({ error: { code: 'not_found', message: 'API key not found' } }, 404);
+        }
+        key.status = body.status;
+        return jsonResponse(key);
+      }
+
+      if (method === 'GET' && url.pathname === '/api/models') {
+        return jsonResponse(apiState.models);
+      }
+
+      if (method === 'GET' && url.pathname === '/api/usage') {
+        const model = url.searchParams.get('model');
+        return jsonResponse(model && model !== 'all' ? apiState.usageSeries.filter((point) => point.model === model) : apiState.usageSeries);
+      }
+
+      if (method === 'GET' && url.pathname === '/api/billing') {
+        return jsonResponse(apiState.billingRecords);
+      }
+
+      if (method === 'GET' && url.pathname === '/api/docs/examples') {
+        return jsonResponse(apiState.docsExamples);
+      }
+
+      return jsonResponse({ error: { code: 'not_found', message: 'not found' } }, 404);
+    })
+  );
+});
 
 describe('mock data', () => {
   it('contains records for every console module', () => {

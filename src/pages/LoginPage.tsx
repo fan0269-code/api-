@@ -1,12 +1,12 @@
 import { FormEvent, useState } from 'react';
 
-export function LoginPage({ onLogin }: { onLogin: () => void }) {
+export function LoginPage({ onLogin }: { onLogin: (identifier: string, password: string) => Promise<void> }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const nextErrors = {
       identifier: identifier.trim() ? undefined : '请输入邮箱或手机号',
@@ -19,7 +19,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
     }
 
     if (identifier && password) {
-      onLogin();
+      await onLogin(identifier.trim(), password);
     }
   };
 

@@ -1,6 +1,5 @@
-import { docsExamples } from '../data/mock';
 import { CodeBlock, SectionHeader } from '../components/ui';
-import type { ToastMessage } from '../types';
+import type { DocsExample, ToastMessage } from '../types';
 
 const commonErrors = [
   { code: 'invalid_api_key', meaning: 'Key 不存在、已停用或请求头格式错误。', action: '检查 Authorization Bearer token。' },
@@ -9,7 +8,13 @@ const commonErrors = [
   { code: 'upstream_timeout', meaning: '上游模型响应超时。', action: '重试请求或切换模型。' }
 ];
 
-export function DocsPage({ pushToast }: { pushToast: (kind: ToastMessage['kind'], text: string) => void }) {
+export function DocsPage({
+  docsExamples,
+  pushToast
+}: {
+  docsExamples: DocsExample[];
+  pushToast: (kind: ToastMessage['kind'], text: string) => void;
+}) {
   const handleCopy = (ok: boolean) => {
     pushToast(ok ? 'success' : 'error', ok ? '已复制到剪贴板' : '复制失败，请手动复制');
   };

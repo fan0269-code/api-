@@ -20,5 +20,7 @@ fi
 
 ssh "${SSH_ARGS[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH'"
 rsync -az --delete -e "ssh ${SSH_ARGS[*]}" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+rsync -az --delete --exclude data -e "ssh ${SSH_ARGS[*]}" server/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/server/"
+rsync -az -e "ssh ${SSH_ARGS[*]}" package.json README.md "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
 echo "Deployed dist/ to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"

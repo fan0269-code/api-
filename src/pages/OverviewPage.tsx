@@ -1,15 +1,29 @@
 import { Activity, CreditCard, KeyRound } from 'lucide-react';
-import { account, baseUrl, billingRecords, models, usageSeries } from '../data/mock';
 import { CodeBlock, CopyButton, MetricCard, SectionHeader, StatusBadge } from '../components/ui';
-import type { ApiKey, ToastMessage } from '../types';
+import type { Account, ApiKey, BillingRecord, ModelInfo, ToastMessage, UsagePoint } from '../types';
+import { relayBaseUrl } from '../api/client';
 
-export function OverviewPage({ activeKey, pushToast }: { activeKey: ApiKey; pushToast: (kind: ToastMessage['kind'], text: string) => void }) {
+export function OverviewPage({
+  account,
+  activeKey,
+  billingRecords,
+  models,
+  usageSeries,
+  pushToast
+}: {
+  account: Account;
+  activeKey: ApiKey;
+  billingRecords: BillingRecord[];
+  models: ModelInfo[];
+  usageSeries: UsagePoint[];
+  pushToast: (kind: ToastMessage['kind'], text: string) => void;
+}) {
   const totalCalls = usageSeries.reduce((sum, point) => sum + point.calls, 0);
   const totalCost = usageSeries.reduce((sum, point) => sum + point.cost, 0);
   const avgLatency = Math.round(usageSeries.reduce((sum, point) => sum + point.latencyMs, 0) / usageSeries.length);
   const avgErrorRate = usageSeries.reduce((sum, point) => sum + point.errorRate, 0) / usageSeries.length;
   const recommendedModel = models.find((model) => model.status === 'available') ?? models[0];
-  const sampleCode = `curl ${baseUrl}/chat/completions \\
+  const sampleCode = `curl ${relayBaseUrl}/chat/completions \\
   -H "Authorization: Bearer ${activeKey.maskedKey}" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"${recommendedModel.id}","messages":[{"role":"user","content":"Hello"}]}'`;
@@ -41,8 +55,8 @@ export function OverviewPage({ activeKey, pushToast }: { activeKey: ApiKey; push
           <h3>快速接入</h3>
           <div className="info-row">
             <span>Base URL</span>
-            <code>{baseUrl}</code>
-            <CopyButton value={baseUrl} label="复制地址" onDone={handleCopy} />
+            <code>{relayBaseUrl}</code>
+            <CopyButton value={relayBaseUrl} label="复制地址" onDone={handleCopy} />
           </div>
           <div className="info-row">
             <span>当前 Key</span>

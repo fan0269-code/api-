@@ -1,7 +1,7 @@
-import { account, billingRecords } from '../data/mock';
 import { MetricCard, SectionHeader } from '../components/ui';
+import type { Account, BillingRecord } from '../types';
 
-export function BillingPage() {
+export function BillingPage({ account, billingRecords }: { account: Account; billingRecords: BillingRecord[] }) {
   const isLow = account.balance < account.lowBalanceThreshold;
 
   return (

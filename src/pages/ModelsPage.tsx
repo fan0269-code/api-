@@ -1,8 +1,8 @@
-import { baseUrl, models } from '../data/mock';
 import { CopyButton, SectionHeader, StatusBadge } from '../components/ui';
-import type { ToastMessage } from '../types';
+import type { ModelInfo, ToastMessage } from '../types';
+import { relayBaseUrl } from '../api/client';
 
-export function ModelsPage({ pushToast }: { pushToast: (kind: ToastMessage['kind'], text: string) => void }) {
+export function ModelsPage({ models, pushToast }: { models: ModelInfo[]; pushToast: (kind: ToastMessage['kind'], text: string) => void }) {
   const handleCopy = (ok: boolean) => {
     pushToast(ok ? 'success' : 'error', ok ? '已复制到剪贴板' : '复制失败，请手动复制');
   };
@@ -18,8 +18,8 @@ export function ModelsPage({ pushToast }: { pushToast: (kind: ToastMessage['kind
           <p className="muted">将现有 OpenAI SDK 的 baseURL 替换为下面地址，即可通过 RelayHub 访问多家模型。</p>
         </div>
         <div className="endpoint-copy">
-          <code>{baseUrl}</code>
-          <CopyButton value={baseUrl} label="复制 Base URL" onDone={handleCopy} />
+          <code>{relayBaseUrl}</code>
+          <CopyButton value={relayBaseUrl} label="复制 Base URL" onDone={handleCopy} />
         </div>
       </article>
 
