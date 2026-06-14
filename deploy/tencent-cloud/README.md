@@ -5,7 +5,7 @@ This deployment runs the React admin console as static files and uses sub2api as
 ## Runtime Topology
 
 - Nginx serves `dist/`.
-- Nginx proxies `/api/` and `/v1/` to `sub2api:8080` on localhost.
+- Nginx proxies `/api/` and sub2api gateway paths to `sub2api:8080` on localhost.
 - Docker Compose runs `sub2api`, `postgres`, and `redis`.
 - Data persists in local directories: `data/`, `postgres_data/`, and `redis_data/`.
 

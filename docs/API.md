@@ -6,7 +6,7 @@
 /api/v1
 ```
 
-生产环境由 Nginx 将 `/api/` 和 `/v1/` 反向代理到 sub2api `:8080`。
+生产环境由 Nginx 将 `/api/` 和 sub2api 网关路径反向代理到 sub2api `:8080`。
 
 ## 鉴权
 
@@ -50,9 +50,10 @@ Authorization: Bearer <access_token>
 本后台第一版使用以下 sub2api 管理接口：
 
 - `GET /api/v1/auth/me`
-- `GET /api/v1/admin/dashboard`
+- `GET /api/v1/admin/dashboard/stats`
+- `GET /api/v1/admin/dashboard/realtime`
 - `GET /api/v1/admin/users`
-- `GET /api/v1/admin/api-keys`
+- `GET /api/v1/admin/groups/:id/api-keys`
 - `GET /api/v1/admin/accounts`
 - `GET /api/v1/admin/groups`
 - `GET /api/v1/admin/channels`
@@ -61,12 +62,18 @@ Authorization: Bearer <access_token>
 - `GET /api/v1/admin/payment/orders`
 - `GET /api/v1/admin/settings`
 
-列表接口按 sub2api 原生分页响应处理：
+接口按 sub2api 标准响应包装处理，前端兼容 `{data: ...}` 与分页数据：
 
 ```json
 {
-  "items": [],
-  "total": 0
+  "code": 0,
+  "message": "success",
+  "data": {
+    "items": [],
+    "total": 0,
+    "page": 1,
+    "page_size": 20
+  }
 }
 ```
 
@@ -76,11 +83,18 @@ AI 客户端请求不经过本仓库 Node 服务，直接由 sub2api 处理。Ng
 
 ```text
 /v1/*
+/v1beta/*
+/backend-api/*
+/antigravity/*
 /openai/v1/*
-/api/v1/*
+/responses
+/responses/*
+/images/*
+/chat/completions
+/embeddings
 ```
 
-当前 Nginx 模板覆盖 `/api/` 和 `/v1/`。如果启用 sub2api 的 `/openai/v1/*` WebSocket/Responses 路由，需要按实际域名增加对应 location。
+当前 Nginx 模板已覆盖上述管理接口和网关入口，并对流式路径关闭 proxy buffering。
 
 ## 错误处理
 

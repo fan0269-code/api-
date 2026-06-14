@@ -18,7 +18,7 @@
 
 ## 本地开发
 
-前端开发服务器会把 `/api` 和 `/v1` 代理到本地 sub2api：
+前端开发服务器会把 `/api`、`/v1` 和其它 sub2api 网关路径代理到本地 sub2api：
 
 ```bash
 npm install
@@ -65,7 +65,7 @@ deploy/tencent-cloud/
 
 - `docker-compose.yml`：sub2api、PostgreSQL、Redis。
 - `.env.example`：生产环境变量模板。
-- `nginx-api-relay-console.conf`：静态前端和 `/api`、`/v1` 反向代理。
+- `nginx-api-relay-console.conf`：静态前端、管理接口和 sub2api 网关路径反向代理。
 - `deploy.sh`：本地构建并上传到腾讯云 CVM。
 
 详细说明见 [腾讯云部署文档](deploy/tencent-cloud/README.md)。

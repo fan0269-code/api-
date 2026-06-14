@@ -17,16 +17,15 @@ const adminUser = {
 
 const fixtures = {
   dashboard: {
+    total_requests: 18000,
     today_requests: 12840,
-    success_rate: 99.2,
     active_users: 326,
-    healthy_accounts: 18,
+    normal_accounts: 18,
     total_accounts: 21,
-    open_alerts: 3,
-    balance_total: 4680.5,
-    recent_errors: [
-      { id: 301, request_id: 'req_301', status_code: 529, message: 'Upstream overloaded', model: 'claude-sonnet-4', created_at: '2026-06-14 10:20' }
-    ]
+    total_actual_cost: 4680.5
+  },
+  realtime: {
+    error_rate: 0.8
   },
   users: {
     items: [
@@ -110,9 +109,10 @@ beforeEach(() => {
 
       const routes: Record<string, unknown> = {
         '/api/v1/auth/me': { user: adminUser },
-        '/api/v1/admin/dashboard': fixtures.dashboard,
+        '/api/v1/admin/dashboard/stats': { data: fixtures.dashboard },
+        '/api/v1/admin/dashboard/realtime': { data: fixtures.realtime },
         '/api/v1/admin/users': fixtures.users,
-        '/api/v1/admin/api-keys': fixtures.apiKeys,
+        '/api/v1/admin/groups/3/api-keys': fixtures.apiKeys,
         '/api/v1/admin/accounts': fixtures.accounts,
         '/api/v1/admin/groups': fixtures.groups,
         '/api/v1/admin/channels': fixtures.channels,
@@ -149,9 +149,10 @@ describe('sub2api admin shell', () => {
     expect(screen.getByText('99.2%')).toBeInTheDocument();
     expect(screen.getByText('Claude Team 01')).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
-      '/api/v1/admin/dashboard',
+      '/api/v1/admin/dashboard/stats',
       expect.objectContaining({ headers: expect.objectContaining({ authorization: 'Bearer admin-token' }) })
     );
+    expect(fetch).toHaveBeenCalledWith('/api/v1/admin/groups/3/api-keys', expect.any(Object));
   });
 
   it('shows the admin-only navigation and account-pool pages', async () => {
