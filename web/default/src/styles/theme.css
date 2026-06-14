@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+@import '../../shared/design-tokens.css';
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -145,47 +146,47 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .dark {
-  /* OpenAI-like dark mode: nearly black chrome, readable raised surfaces. */
-  --background: oklch(0.185 0 0);
-  --foreground: oklch(0.965 0 0);
-  --card: oklch(0.235 0 0);
-  --card-foreground: oklch(0.965 0 0);
-  --popover: oklch(0.255 0 0);
-  --popover-foreground: oklch(0.965 0 0);
-  --primary: oklch(0.965 0 0);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.285 0 0);
-  --secondary-foreground: oklch(0.965 0 0);
-  --muted: oklch(0.255 0 0);
-  --muted-foreground: oklch(0.76 0 0);
-  --accent: oklch(0.325 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.696 0.17 162.48);
-  --success-foreground: oklch(0.145 0 0);
-  --warning: oklch(0.769 0.188 70.08);
-  --warning-foreground: oklch(0.145 0 0);
-  --info: oklch(0.68 0.17 237.323);
-  --info-foreground: oklch(0.145 0 0);
-  --neutral: oklch(0.76 0 0);
-  --neutral-foreground: oklch(0.145 0 0);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.115 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.965 0 0);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.31 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.68 0 0);
-  --skeleton-base: oklch(0.285 0 0);
-  --skeleton-highlight: oklch(0.39 0 0);
+  /* 提亮的暗色模式 - 使用 FlowLight 品牌色 */
+  --background: var(--fl-gray-0);
+  --foreground: var(--fl-gray-900);
+  --card: var(--fl-gray-50);
+  --card-foreground: var(--fl-gray-900);
+  --popover: var(--fl-gray-100);
+  --popover-foreground: var(--fl-gray-900);
+  --primary: var(--fl-500);
+  --primary-foreground: var(--fl-gray-0);
+  --secondary: var(--fl-gray-100);
+  --secondary-foreground: var(--fl-gray-900);
+  --muted: var(--fl-gray-50);
+  --muted-foreground: var(--fl-gray-400);
+  --accent: var(--fl-gray-100);
+  --accent-foreground: var(--fl-gray-900);
+  --destructive: var(--fl-error-500);
+  --destructive-foreground: var(--fl-gray-0);
+  --success: var(--fl-success-500);
+  --success-foreground: var(--fl-gray-0);
+  --warning: var(--fl-warning-500);
+  --warning-foreground: var(--fl-gray-0);
+  --info: var(--fl-info-500);
+  --info-foreground: var(--fl-gray-0);
+  --neutral: var(--fl-gray-400);
+  --neutral-foreground: var(--fl-gray-0);
+  --border: var(--fl-glass-border);
+  --input: var(--fl-glass-border);
+  --ring: var(--fl-500);
+  --chart-1: var(--fl-info-500);
+  --chart-2: var(--fl-success-500);
+  --chart-3: var(--fl-warning-500);
+  --chart-4: #8B5CF6;
+  --chart-5: var(--fl-error-500);
+  --sidebar: var(--fl-gray-50);
+  --sidebar-foreground: var(--fl-gray-900);
+  --sidebar-primary: var(--fl-500);
+  --sidebar-primary-foreground: var(--fl-gray-0);
+  --sidebar-accent: var(--fl-gray-100);
+  --sidebar-accent-foreground: var(--fl-gray-900);
+  --sidebar-border: var(--fl-glass-border);
+  --sidebar-ring: var(--fl-500);
+  --skeleton-base: var(--fl-gray-100);
+  --skeleton-highlight: var(--fl-gray-200);
 }

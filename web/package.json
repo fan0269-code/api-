@@ -1,10 +1,15 @@
 {
   "name": "new-api-web-workspace",
   "private": true,
+  "type": "module",
   "workspaces": [
     "default",
     "classic"
   ],
+  "scripts": {
+    "test": "node test/theme-switching.test.js",
+    "test:css": "npm run lint:css --workspaces"
+  },
   "catalog": {
     "@lobehub/icons": "^5.10.0",
     "axios": "^1.16.1",

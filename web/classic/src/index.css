@@ -1,3 +1,6 @@
+/* ==================== 导入共享设计令牌 ==================== */
+@import '../../shared/design-tokens.css';
+
 /* ==================== Tailwind CSS 配置 ==================== */
 @layer tailwind-base, semi, tailwind-components, tailwind-utils;
 
@@ -13,11 +16,227 @@
   @tailwind utilities;
 }
 
-/* ==================== 全局基础样式 ==================== */
+/* ==================== FlowLight 品牌主题 ==================== */
+/* 使用共享设计令牌，覆盖 Semi Design 变量 */
+
 :root {
-  --sidebar-width: 180px;
-  --sidebar-width-collapsed: 60px;
-  --sidebar-current-width: var(--sidebar-width);
+  --sidebar-current-width: var(--fl-sidebar-width);
+}
+
+/* 覆盖 Semi Design 暗色主题 CSS 变量 - 使用共享令牌 */
+html.dark {
+  --semi-color-primary: var(--fl-500) !important;
+  --semi-color-primary-hover: var(--fl-400) !important;
+  --semi-color-primary-active: var(--fl-600) !important;
+  --semi-color-primary-disabled: var(--fl-300) !important;
+  --semi-color-primary-light-default: var(--fl-accent-subtle) !important;
+  --semi-color-primary-light-hover: var(--fl-accent-glow) !important;
+  --semi-color-primary-light-active: rgba(249, 115, 22, 0.3) !important;
+
+  --semi-color-bg-0: var(--fl-gray-0) !important;
+  --semi-color-bg-1: var(--fl-glass-bg) !important;
+  --semi-color-bg-2: var(--fl-glass-hover) !important;
+  --semi-color-bg-3: var(--fl-glass-border) !important;
+
+  --semi-color-border: var(--fl-glass-border) !important;
+  --semi-color-nav-bg: var(--fl-glass-bg) !important;
+  --semi-color-fill-0: var(--fl-glass-surface) !important;
+  --semi-color-fill-1: var(--fl-glass-hover) !important;
+  --semi-color-fill-2: var(--fl-glass-border) !important;
+
+  --semi-color-text-0: rgba(255, 255, 255, 0.95) !important;
+  --semi-color-text-1: rgba(255, 255, 255, 0.85) !important;
+  --semi-color-text-2: rgba(255, 255, 255, 0.6) !important;
+  --semi-color-text-3: rgba(255, 255, 255, 0.4) !important;
+
+  --semi-shadow-elevated: var(--fl-shadow-lg);
+  --semi-shadow-popover: var(--fl-shadow-xl);
+}
+
+/* 全局玻璃质感背景 */
+html.dark body {
+  background: var(--fl-gray-0);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -20%, var(--fl-accent-subtle) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, var(--fl-accent-glow) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Semi Navigation / Sidebar 玻璃化 */
+html.dark .semi-navigation {
+  background: var(--fl-glass-bg) !important;
+  backdrop-filter: blur(var(--fl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--fl-glass-blur));
+  border-right: 1px solid var(--fl-glass-border) !important;
+}
+
+/* 卡片玻璃化 */
+html.dark .semi-card {
+  background: var(--fl-glass-card-bg) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--fl-glass-border) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border-radius: 12px !important;
+}
+
+html.dark .semi-card-bordered {
+  border: 1px solid var(--fl-glass-border) !important;
+}
+
+/* 表格卡片玻璃化 */
+html.dark .semi-card-header,
+html.dark .semi-card-body {
+  background: transparent !important;
+}
+
+/* 自定义页面内容区域 */
+html.dark .semi-layout-content {
+  background: transparent !important;
+}
+
+/* 导航项选中色 */
+html.dark .semi-navigation-item-selected {
+  background: var(--fl-accent-subtle) !important;
+  border-left: 3px solid var(--fl-500) !important;
+}
+
+html.dark .semi-navigation-item:hover {
+  background: var(--fl-glass-hover) !important;
+}
+
+/* 侧边栏容器 */
+html.dark .sidebar-container {
+  background: var(--fl-glass-bg) !important;
+  backdrop-filter: blur(var(--fl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--fl-glass-blur));
+  border-right: 1px solid var(--fl-glass-border) !important;
+}
+
+html.dark .sidebar-nav {
+  background: transparent !important;
+}
+
+/* 侧边栏折叠按钮 */
+html.dark .sidebar-collapse-button {
+  background: transparent !important;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 -10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+  border-top: 1px solid var(--fl-glass-border);
+}
+
+/* 按钮样式 */
+html.dark .semi-button-primary {
+  background: var(--fl-500) !important;
+  border-color: var(--fl-500) !important;
+}
+html.dark .semi-button-primary:hover {
+  background: var(--fl-400) !important;
+}
+html.dark .semi-button-light {
+  background: var(--fl-accent-subtle) !important;
+  border-color: transparent !important;
+}
+
+/* 输入框样式 */
+html.dark .semi-input-wrapper {
+  background: var(--fl-glass-surface) !important;
+  border: 1px solid var(--fl-glass-border) !important;
+  border-radius: 10px !important;
+  transition: all var(--fl-transition-fast);
+}
+html.dark .semi-input-wrapper:hover {
+  border-color: var(--fl-accent-glow) !important;
+}
+html.dark .semi-input-wrapper-focus {
+  border-color: var(--fl-500) !important;
+  box-shadow: 0 0 0 2px var(--fl-accent-subtle) !important;
+}
+
+/* 表格样式 */
+html.dark .semi-table {
+  background: transparent !important;
+}
+html.dark .semi-table-thead > .semi-table-row > .semi-table-row-head {
+  background: var(--fl-glass-card-bg) !important;
+  border-bottom: 1px solid var(--fl-glass-border) !important;
+}
+html.dark .semi-table-tbody > .semi-table-row > .semi-table-row-cell {
+  border-bottom: 1px solid var(--fl-glass-bg) !important;
+}
+html.dark .semi-table-tbody > .semi-table-row:hover > .semi-table-row-cell {
+  background: var(--fl-glass-card-bg) !important;
+}
+
+/* 标签/Tag 样式 */
+html.dark .semi-tag {
+  border-radius: 6px !important;
+}
+
+/* Select 下拉框 */
+html.dark .semi-select-option-selected {
+  background: var(--fl-accent-subtle) !important;
+}
+
+/* Tabs 样式 */
+html.dark .semi-tabs-tab {
+  border-radius: 8px !important;
+}
+html.dark .semi-tabs-tab-active {
+  background: var(--fl-accent-subtle) !important;
+}
+
+/* Modal 弹窗 */
+html.dark .semi-modal-content {
+  background: rgba(20, 20, 30, 0.95) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--fl-glass-border) !important;
+  box-shadow: var(--fl-shadow-xl);
+}
+
+/* Toast 通知 */
+html.dark .semi-toast-content {
+  background: rgba(20, 20, 30, 0.9) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--fl-glass-border);
+}
+
+/* 页脚 */
+html.dark .custom-footer {
+  border-top: 1px solid var(--fl-glass-border) !important;
+  background: transparent !important;
+}
+
+/* 侧边栏选中箭头 */
+html.dark .semi-navigation-item-selected .semi-icon-chevron_right {
+  color: var(--fl-500) !important;
+}
+
+/* 登录/注册页面专用玻璃容器 */
+html.dark .auth-glass-container {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--fl-glass-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* 页面头部导航栏 */
+html.dark .semi-layout-header {
+  background: var(--fl-glass-bg) !important;
+  backdrop-filter: blur(var(--fl-glass-blur));
+  border-bottom: 1px solid var(--fl-glass-border) !important;
+}
+
+/* 滚动条适配暗色 */
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 
 body.sidebar-collapsed {
@@ -25,10 +244,12 @@ body.sidebar-collapsed {
 }
 
 body {
-  font-family: Lato, 'Helvetica Neue', Arial, Helvetica, 'Microsoft YaHei',
-    sans-serif;
+  font-family: var(--fl-font-body);
   color: var(--semi-color-text-0);
   background-color: var(--semi-color-bg-0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: var(--fl-theme-transition);
 }
 
 .app-layout {

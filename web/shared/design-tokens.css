@@ -1,0 +1,176 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   FlowLight Design Tokens
+   ────────────────────────────────────────────────────────────────────────────
+   统一设计令牌文件 - 被 default 和 classic 主题共同使用
+   权威来源：所有 FlowLight 品牌值的单一来源
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 品牌色板 (Orange Brand) ───────────────────────────────────────────── */
+  --fl-50:  #FFF7ED;
+  --fl-100: #FFEDD5;
+  --fl-200: #FED7AA;
+  --fl-300: #FDBA74;
+  --fl-400: #FB923C;
+  --fl-500: #F97316;   /* 主品牌色 */
+  --fl-600: #EA580C;
+  --fl-700: #C2410C;
+  --fl-800: #9A3412;
+  --fl-900: #7C2D12;
+
+  /* ── 中性色板 (提亮暗色模式) ───────────────────────────────────────────── */
+  --fl-gray-0:    #121215;  /* 比 #09090B 更亮 */
+  --fl-gray-50:   #1E1E22;  /* 比 #18181B 更亮 */
+  --fl-gray-100:  #2A2A30;  /* 比 #27272A 更亮 */
+  --fl-gray-200:  #44444D;  /* 比 #3F3F46 更亮 */
+  --fl-gray-300:  #5C5C66;  /* 比 #52525B 更亮 */
+  --fl-gray-400:  #7C7C88;  /* 比 #71717A 更亮 */
+  --fl-gray-500:  #A8A8B4;  /* 比 #A1A1AA 更亮 */
+  --fl-gray-600:  #D8D8E0;  /* 比 #D4D4D8 更亮 */
+  --fl-gray-700:  #E8E8EC;  /* 比 #E4E4E7 更亮 */
+  --fl-gray-800:  #F5F5F7;  /* 比 #F4F4F5 更亮 */
+  --fl-gray-900:  #FCFCFD;  /* 比 #FAFAFA 更亮 */
+
+  /* ── 语义色 ────────────────────────────────────────────────────────────── */
+  --fl-success-50:  #F0FDF4;
+  --fl-success-500: #22C55E;
+  --fl-success-600: #16A34A;
+
+  --fl-warning-50:  #FFFBEB;
+  --fl-warning-500: #F59E0B;
+  --fl-warning-600: #D97706;
+
+  --fl-error-50:    #FEF2F2;
+  --fl-error-500:   #EF4444;
+  --fl-error-600:   #DC2626;
+
+  --fl-info-50:     #EFF6FF;
+  --fl-info-500:    #3B82F6;
+  --fl-info-600:    #2563EB;
+
+  /* ── 字体 ──────────────────────────────────────────────────────────────── */
+  --fl-font-display: 'Cabinet Grotesk', 'Inter', -apple-system, sans-serif;
+  --fl-font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fl-font-mono:    'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+  /* ── 字号 ──────────────────────────────────────────────────────────────── */
+  --fl-text-xs:   0.75rem;    /* 12px */
+  --fl-text-sm:   0.875rem;   /* 14px */
+  --fl-text-base: 1rem;       /* 16px */
+  --fl-text-lg:   1.125rem;   /* 18px */
+  --fl-text-xl:   1.25rem;    /* 20px */
+  --fl-text-2xl:  1.5rem;     /* 24px */
+  --fl-text-3xl:  1.875rem;   /* 30px */
+  --fl-text-4xl:  2.25rem;    /* 36px */
+  --fl-text-5xl:  3rem;       /* 48px */
+  --fl-text-6xl:  3.75rem;    /* 60px */
+
+  /* ── 行高 ──────────────────────────────────────────────────────────────── */
+  --fl-leading-tight:  1.15;
+  --fl-leading-normal: 1.6;
+  --fl-leading-relaxed: 1.75;
+
+  /* ── 字间距 ────────────────────────────────────────────────────────────── */
+  --fl-tracking-tight:  -0.025em;
+  --fl-tracking-normal: 0;
+  --fl-tracking-wide:   0.025em;
+
+  /* ── 间距 (4px 基础) ──────────────────────────────────────────────────── */
+  --fl-space-xs:  0.25rem;   /* 4px */
+  --fl-space-sm:  0.5rem;    /* 8px */
+  --fl-space-md:  1rem;      /* 16px */
+  --fl-space-lg:  1.5rem;    /* 24px */
+  --fl-space-xl:  2rem;      /* 32px */
+  --fl-space-2xl: 3rem;      /* 48px */
+  --fl-space-3xl: 4rem;      /* 64px */
+  --fl-space-4xl: 6rem;      /* 96px */
+
+  /* ── 圆角 ──────────────────────────────────────────────────────────────── */
+  --fl-radius-sm:   4px;
+  --fl-radius-md:   8px;
+  --fl-radius-lg:   12px;
+  --fl-radius-xl:   16px;
+  --fl-radius-full: 9999px;
+
+  /* ── 阴影 ──────────────────────────────────────────────────────────────── */
+  --fl-shadow-sm:   0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --fl-shadow-md:   0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --fl-shadow-lg:   0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --fl-shadow-xl:   0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --fl-shadow-glow: 0 0 30px rgba(249, 115, 22, 0.12);
+
+  /* ── 语义表面令牌 ──────────────────────────────────────────────────────── */
+  --fl-surface-root:    var(--fl-gray-0);
+  --fl-surface-raised:  var(--fl-gray-50);
+  --fl-surface-overlay: var(--fl-gray-100);
+  --fl-surface-border:  var(--fl-gray-100);
+
+  --fl-text-primary:    var(--fl-gray-900);
+  --fl-text-secondary:  var(--fl-gray-500);
+  --fl-text-tertiary:   var(--fl-gray-400);
+  --fl-text-inverse:    var(--fl-gray-0);
+
+  /* ── 品牌表面令牌 ──────────────────────────────────────────────────────── */
+  --fl-accent:           var(--fl-500);
+  --fl-accent-hover:     var(--fl-600);
+  --fl-accent-subtle:    rgba(249, 115, 22, 0.1);
+  --fl-accent-glow:      rgba(249, 115, 22, 0.15);
+
+  /* ── 毛玻璃参数 (提亮) ────────────────────────────────────────────────── */
+  --fl-glass-bg: rgba(255, 255, 255, 0.06);      /* 比 0.04 更亮 */
+  --fl-glass-border: rgba(255, 255, 255, 0.10);   /* 比 0.08 更亮 */
+  --fl-glass-hover: rgba(255, 255, 255, 0.10);    /* 比 0.08 更亮 */
+  --fl-glass-blur: 20px;
+  --fl-glass-card-bg: rgba(255, 255, 255, 0.04);  /* 比 0.03 更亮 */
+  --fl-glass-surface: rgba(255, 255, 255, 0.07);  /* 比 0.05 更亮 */
+
+  /* ── 过渡 ──────────────────────────────────────────────────────────────── */
+  --fl-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fl-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fl-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── 主题切换过渡 ──────────────────────────────────────────────────────── */
+  --fl-theme-transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+  /* ── 布局 ──────────────────────────────────────────────────────────────── */
+  --fl-max-width-container: 1100px;
+  --fl-nav-height: 56px;
+  --fl-sidebar-width: 180px;
+  --fl-sidebar-width-collapsed: 60px;
+}
+
+/* ── 暗色模式 (默认) ────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+}
+
+/* ── 浅色模式覆盖 ────────────────────────────────────────────────────────── */
+:root.light {
+  color-scheme: light;
+
+  /* 浅色模式下的表面颜色 */
+  --fl-surface-root:    var(--fl-gray-900);
+  --fl-surface-raised:  var(--fl-gray-800);
+  --fl-surface-overlay: var(--fl-gray-700);
+  --fl-surface-border:  var(--fl-gray-200);
+
+  /* 浅色模式下的文本颜色 */
+  --fl-text-primary:    var(--fl-gray-0);
+  --fl-text-secondary:  var(--fl-gray-400);
+  --fl-text-tertiary:   var(--fl-gray-300);
+  --fl-text-inverse:    var(--fl-gray-900);
+
+  /* 浅色模式下的毛玻璃参数 */
+  --fl-glass-bg: rgba(0, 0, 0, 0.02);
+  --fl-glass-border: rgba(0, 0, 0, 0.06);
+  --fl-glass-hover: rgba(0, 0, 0, 0.04);
+  --fl-glass-card-bg: rgba(0, 0, 0, 0.01);
+  --fl-glass-surface: rgba(0, 0, 0, 0.03);
+
+  /* 浅色模式下的阴影 */
+  --fl-shadow-sm:   0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --fl-shadow-md:   0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --fl-shadow-lg:   0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --fl-shadow-xl:   0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --fl-shadow-glow: 0 0 30px rgba(249, 115, 22, 0.08);
+}
