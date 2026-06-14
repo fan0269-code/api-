@@ -48,6 +48,38 @@ export default function App() {
     navigate('/login');
   };
 
+  const adjustUserBalance = async (userId: number, amount: number, operation: 'set' | 'add' | 'subtract', notes: string) => {
+    const user = await adminApi.updateUserBalance(userId, { balance: amount, operation, notes });
+    setConsoleData((current) =>
+      current
+        ? {
+            ...current,
+            users: {
+              ...current.users,
+              items: current.users.items.map((item) => (item.id === user.id ? { ...item, ...user } : item))
+            }
+          }
+        : current
+    );
+    pushToast('success', '用户余额已更新');
+  };
+
+  const updateApiKeyGroup = async (keyId: number, groupId: number | null, resetUsage: boolean) => {
+    const apiKey = await adminApi.updateApiKeyGroup(keyId, { group_id: groupId, reset_rate_limit_usage: resetUsage });
+    setConsoleData((current) =>
+      current
+        ? {
+            ...current,
+            apiKeys: {
+              ...current.apiKeys,
+              items: current.apiKeys.items.map((item) => (item.id === apiKey.id ? { ...item, ...apiKey } : item))
+            }
+          }
+        : current
+    );
+    pushToast('success', 'API Key 分组已更新');
+  };
+
   const isReady = adminUser && consoleData;
 
   return (
@@ -62,8 +94,8 @@ export default function App() {
               <Shell user={adminUser} onLogout={logout}>
                 <Routes>
                   <Route path="/overview" element={<OverviewPage data={consoleData} />} />
-                  <Route path="/users" element={<UsersPage users={consoleData.users.items} />} />
-                  <Route path="/keys" element={<ApiKeysPage keys={consoleData.apiKeys.items} />} />
+                  <Route path="/users" element={<UsersPage users={consoleData.users.items} onAdjustBalance={adjustUserBalance} />} />
+                  <Route path="/keys" element={<ApiKeysPage keys={consoleData.apiKeys.items} groups={consoleData.groups.items} onUpdateGroup={updateApiKeyGroup} />} />
                   <Route path="/accounts" element={<AccountsPage accounts={consoleData.accounts.items} />} />
                   <Route path="/groups" element={<GroupsPage groups={consoleData.groups.items} />} />
                   <Route path="/channels" element={<ChannelsPage channels={consoleData.channels.items} />} />

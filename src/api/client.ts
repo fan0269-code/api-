@@ -204,6 +204,14 @@ export const adminApi = {
     return list<ManagedUser>('/admin/users');
   },
 
+  async updateUserBalance(userId: number, input: { balance: number; operation: 'set' | 'add' | 'subtract'; notes?: string }) {
+    const payload = await request<unknown>(`/admin/users/${userId}/balance`, {
+      method: 'POST',
+      body: JSON.stringify(input)
+    });
+    return unwrapPayload(payload) as ManagedUser;
+  },
+
   async getApiKeys(groups: DispatchGroup[] = []) {
     if (groups.length === 0) {
       return { items: [], total: 0 };
@@ -218,6 +226,15 @@ export const adminApi = {
 
     const items = groupKeyLists.flat();
     return { items, total: items.length };
+  },
+
+  async updateApiKeyGroup(keyId: number, input: { group_id: number | null; reset_rate_limit_usage: boolean }) {
+    const payload = await request<unknown>(`/admin/api-keys/${keyId}`, {
+      method: 'PUT',
+      body: JSON.stringify(input)
+    });
+    const record = toRecord(payload);
+    return mapApiKey(record.api_key ?? record);
   },
 
   getAccounts() {

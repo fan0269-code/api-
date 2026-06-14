@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import App from './App';
@@ -126,6 +126,20 @@ beforeEach(() => {
         return jsonResponse(routes[url.pathname]);
       }
 
+      if (method === 'POST' && url.pathname === '/api/v1/admin/users/12/balance') {
+        return jsonResponse({
+          data: { id: 12, email: 'ops@example.com', username: '运营客户', role: 'user', balance: 158.5, status: 'active', created_at: '2026-06-01' }
+        });
+      }
+
+      if (method === 'PUT' && url.pathname === '/api/v1/admin/api-keys/51') {
+        return jsonResponse({
+          data: {
+            api_key: { id: 51, name: '生产 Key', user_email: 'ops@example.com', key_preview: 'sk-...prod', group_name: 'Claude 高并发', status: 'active', rpm_limit: 300 }
+          }
+        });
+      }
+
       return jsonResponse({ error: { message: `unhandled ${method} ${url.pathname}` } }, 404);
     })
   );
@@ -206,6 +220,51 @@ describe('sub2api admin shell', () => {
     await userEvent.click(screen.getByRole('link', { name: '订单余额' }));
     expect(screen.getByText('stripe')).toBeInTheDocument();
     expect(screen.getByText('¥200.00')).toBeInTheDocument();
+  });
+
+  it('runs core admin operations against sub2api write APIs', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
+    await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
+
+    await userEvent.click(await screen.findByRole('link', { name: '用户管理' }));
+    await userEvent.click(screen.getByRole('button', { name: '调整 ops@example.com 余额' }));
+    await userEvent.clear(screen.getByLabelText('调整金额'));
+    await userEvent.type(screen.getByLabelText('调整金额'), '30');
+    await userEvent.type(screen.getByLabelText('备注'), '人工补余额');
+    await userEvent.click(screen.getByRole('button', { name: '确认调整' }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/admin/users/12/balance',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ balance: 30, operation: 'add', notes: '人工补余额' })
+        })
+      )
+    );
+    expect(await screen.findByText('余额 ¥158.50')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: 'API Key 管理' }));
+    await userEvent.click(screen.getByRole('button', { name: '绑定 生产 Key 分组' }));
+    await userEvent.click(screen.getByLabelText('重置限速用量'));
+    await userEvent.click(screen.getByRole('button', { name: '保存绑定' }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/admin/api-keys/51',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ group_id: 3, reset_rate_limit_usage: true })
+        })
+      )
+    );
   });
 });
 

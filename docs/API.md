@@ -62,6 +62,11 @@ Authorization: Bearer <access_token>
 - `GET /api/v1/admin/payment/orders`
 - `GET /api/v1/admin/settings`
 
+本后台已接入以下核心写操作：
+
+- `POST /api/v1/admin/users/:id/balance`：管理员调整用户余额，支持 `set`、`add`、`subtract`。
+- `PUT /api/v1/admin/api-keys/:id`：管理员绑定/解绑 API Key 分组，可同时重置限速用量。
+
 接口按 sub2api 标准响应包装处理，前端兼容 `{data: ...}` 与分页数据：
 
 ```json

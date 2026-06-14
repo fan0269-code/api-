@@ -1,6 +1,6 @@
 import { AlertTriangle, Activity, CheckCircle2, Database, RadioTower, UsersRound, WalletCards } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { MetricCard, SectionHeader, StatusBadge } from '../components/ui';
+import { FormEvent, useState, type ReactNode } from 'react';
+import { MetricCard, Modal, SectionHeader, StatusBadge } from '../components/ui';
 import type {
   AdminAPIKey,
   AdminChannel,
@@ -56,31 +56,175 @@ export function OverviewPage({ data }: { data: AdminConsoleData }) {
   );
 }
 
-export function UsersPage({ users }: { users: ManagedUser[] }) {
+export function UsersPage({ users, onAdjustBalance }: { users: ManagedUser[]; onAdjustBalance: (userId: number, amount: number, operation: 'set' | 'add' | 'subtract', notes: string) => Promise<void> }) {
+  const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
+  const [amount, setAmount] = useState('10');
+  const [operation, setOperation] = useState<'set' | 'add' | 'subtract'>('add');
+  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const openBalanceModal = (user: ManagedUser) => {
+    setEditingUser(user);
+    setAmount('10');
+    setOperation('add');
+    setNotes('');
+  };
+
+  const submitBalance = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingUser) return;
+    setIsSaving(true);
+    try {
+      await onAdjustBalance(editingUser.id, Number(amount), operation, notes.trim());
+      setEditingUser(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <AdminTable
-      title="用户管理"
-      eyebrow="Admin Users"
-      columns={['用户', '角色', '余额', '状态', '创建时间']}
-      rows={users.map((user) => [
-        <strong>{user.email}</strong>,
-        user.role,
-        `余额 ${money(user.balance)}`,
-        <StatusCell status={user.status} />,
-        user.created_at
-      ])}
-    />
+    <>
+      <AdminTable
+        title="用户管理"
+        eyebrow="Admin Users"
+        columns={['用户', '角色', '余额', '状态', '创建时间', '操作']}
+        rows={users.map((user) => [
+          <strong>{user.email}</strong>,
+          user.role,
+          `余额 ${money(user.balance)}`,
+          <StatusCell status={user.status} />,
+          user.created_at,
+          <button className="button-secondary" type="button" onClick={() => openBalanceModal(user)} aria-label={`调整 ${user.email} 余额`}>
+            调余额
+          </button>
+        ])}
+      />
+      {editingUser ? (
+        <Modal
+          title="调整用户余额"
+          onClose={() => setEditingUser(null)}
+          footer={
+            <>
+              <button className="button-secondary" type="button" onClick={() => setEditingUser(null)}>
+                取消
+              </button>
+              <button className="button-primary" type="submit" form="balance-form" disabled={isSaving}>
+                {isSaving ? '保存中...' : '确认调整'}
+              </button>
+            </>
+          }
+        >
+          <form id="balance-form" onSubmit={submitBalance}>
+            <p className="muted">{editingUser.email}</p>
+            <div className="form-field">
+              <label htmlFor="balance-operation">操作类型</label>
+              <select id="balance-operation" value={operation} onChange={(event) => setOperation(event.target.value as 'set' | 'add' | 'subtract')}>
+                <option value="add">增加余额</option>
+                <option value="subtract">扣减余额</option>
+                <option value="set">设为指定余额</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label htmlFor="balance-amount">调整金额</label>
+              <input id="balance-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} />
+            </div>
+            <div className="form-field">
+              <label htmlFor="balance-notes">备注</label>
+              <input id="balance-notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+    </>
   );
 }
 
-export function ApiKeysPage({ keys }: { keys: AdminAPIKey[] }) {
+export function ApiKeysPage({
+  keys,
+  groups,
+  onUpdateGroup
+}: {
+  keys: AdminAPIKey[];
+  groups: DispatchGroup[];
+  onUpdateGroup: (keyId: number, groupId: number | null, resetUsage: boolean) => Promise<void>;
+}) {
+  const [editingKey, setEditingKey] = useState<AdminAPIKey | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [resetUsage, setResetUsage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const openGroupModal = (key: AdminAPIKey) => {
+    setEditingKey(key);
+    setSelectedGroupId(String(groups.find((group) => group.name === key.group_name)?.id ?? groups[0]?.id ?? ''));
+    setResetUsage(false);
+  };
+
+  const submitGroup = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingKey) return;
+    setIsSaving(true);
+    try {
+      await onUpdateGroup(editingKey.id, selectedGroupId ? Number(selectedGroupId) : null, resetUsage);
+      setEditingKey(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <AdminTable
-      title="API Key 管理"
-      eyebrow="Key Distribution"
-      columns={['名称', '用户', 'Key', '分组', '限制', '状态']}
-      rows={keys.map((key) => [key.name, key.user_email, <code>{key.key_preview}</code>, key.group_name, `${key.rpm_limit} RPM`, <StatusCell status={key.status} />])}
-    />
+    <>
+      <AdminTable
+        title="API Key 管理"
+        eyebrow="Key Distribution"
+        columns={['名称', '用户', 'Key', '分组', '限制', '状态', '操作']}
+        rows={keys.map((key) => [
+          key.name,
+          key.user_email,
+          <code>{key.key_preview}</code>,
+          key.group_name,
+          `${key.rpm_limit} RPM`,
+          <StatusCell status={key.status} />,
+          <button className="button-secondary" type="button" onClick={() => openGroupModal(key)} aria-label={`绑定 ${key.name} 分组`}>
+            绑定分组
+          </button>
+        ])}
+      />
+      {editingKey ? (
+        <Modal
+          title="绑定 API Key 分组"
+          onClose={() => setEditingKey(null)}
+          footer={
+            <>
+              <button className="button-secondary" type="button" onClick={() => setEditingKey(null)}>
+                取消
+              </button>
+              <button className="button-primary" type="submit" form="key-group-form" disabled={isSaving}>
+                {isSaving ? '保存中...' : '保存绑定'}
+              </button>
+            </>
+          }
+        >
+          <form id="key-group-form" onSubmit={submitGroup}>
+            <p className="muted">{editingKey.name}</p>
+            <div className="form-field">
+              <label htmlFor="key-group">目标分组</label>
+              <select id="key-group" value={selectedGroupId} onChange={(event) => setSelectedGroupId(event.target.value)}>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+                <option value="">不绑定分组</option>
+              </select>
+            </div>
+            <label className="checkbox-field" htmlFor="reset-rate-limit">
+              <input id="reset-rate-limit" type="checkbox" checked={resetUsage} onChange={(event) => setResetUsage(event.target.checked)} />
+              重置限速用量
+            </label>
+          </form>
+        </Modal>
+      ) : null}
+    </>
   );
 }
 
