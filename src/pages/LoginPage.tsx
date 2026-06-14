@@ -32,7 +32,6 @@ export function LoginPage({ onLogin }: { onLogin: (email: string, password: stri
     <main className="login-page">
       <div className="animated-grid-pattern" aria-hidden="true" />
       <section className="login-copy">
-        <span className="eyebrow">sub2api Admin</span>
         <h1>智链 AI 管理后台</h1>
         <p>基于 sub2api 的订阅账户池、分组调度、调用日志和订单余额运营后台。</p>
         <div className="login-value-grid">
