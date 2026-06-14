@@ -1,14 +1,16 @@
 import { Check, Copy, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { ApiKeyStatus, ChannelStatus, ModelStatus, ToastMessage } from '../types';
+import type { AdminStatus, ToastMessage } from '../types';
 
-const statusLabels: Record<ModelStatus | ApiKeyStatus | ChannelStatus, string> = {
-  available: '可用',
-  congested: '拥堵',
-  maintenance: '维护',
+const statusLabels: Record<AdminStatus, string> = {
   active: '启用',
   degraded: '降级',
-  disabled: '停用'
+  disabled: '停用',
+  maintenance: '维护',
+  paid: '已支付',
+  success: '成功',
+  failed: '失败',
+  pending: '待处理'
 };
 
 export function SectionHeader({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: ReactNode }) {
@@ -36,8 +38,8 @@ export function MetricCard({ label, value, detail, icon }: { label: string; valu
   );
 }
 
-export function StatusBadge({ status }: { status: ModelStatus | ApiKeyStatus | ChannelStatus }) {
-  return <span className={`status-badge status-${status}`}>{statusLabels[status]}</span>;
+export function StatusBadge({ status }: { status: AdminStatus }) {
+  return <span className={`status-badge status-${status}`}>{statusLabels[status] ?? status}</span>;
 }
 
 export function CopyButton({ value, label, onDone }: { value: string; label?: string; onDone: (ok: boolean) => void }) {

@@ -1,42 +1,24 @@
-# RelayHub API 文档
+# sub2api 管理后台 API 对接说明
 
-所有接口返回 JSON。错误响应统一为：
-
-```json
-{
-  "error": {
-    "code": "validation_error",
-    "message": "name is required"
-  }
-}
-```
-
-## 健康检查
-
-`GET /api/health`
-
-返回服务状态、服务名和时间戳。
-
-## 控制台鉴权
-
-除 `GET /api/health` 和 `POST /api/auth/login` 外，所有 `/api/*` 控制台接口都需要登录返回的会话 token：
+前端直连 sub2api，默认 API Base URL：
 
 ```text
-Authorization: Bearer demo-session-token
+/api/v1
 ```
 
-生产部署可通过 `RELAY_ADMIN_TOKEN` 覆盖默认演示 token。`/v1/*` 中转接口不使用控制台 token，而使用 RelayHub API Key。
+生产环境由 Nginx 将 `/api/` 和 `/v1/` 反向代理到 sub2api `:8080`。
 
-## 登录
+## 鉴权
 
-`POST /api/auth/login`
+`POST /api/v1/auth/login`
 
 请求：
 
 ```json
 {
-  "identifier": "dev@example.com",
-  "password": "password123"
+  "email": "admin@example.com",
+  "identifier": "admin@example.com",
+  "password": "your-password"
 }
 ```
 
@@ -44,232 +26,72 @@ Authorization: Bearer demo-session-token
 
 ```json
 {
-  "token": "demo-session-token",
-  "account": {
-    "name": "林开发者",
-    "email": "dev@example.com",
-    "plan": "Pro Developer",
-    "balance": 128.6,
-    "monthlySpend": 86.42,
-    "lowBalanceThreshold": 150
+  "access_token": "jwt-token",
+  "token_type": "Bearer",
+  "user": {
+    "id": 1,
+    "email": "admin@example.com",
+    "username": "Admin",
+    "role": "admin"
   }
 }
 ```
 
-## 账户
-
-`GET /api/account`
-
-返回当前账户信息。
-
-## API Keys
-
-`GET /api/keys`
-
-返回 API Key 列表，包括脱敏 Key、权限、状态、月配额、已用额度和每分钟请求数限制。
-
-`POST /api/keys`
-
-请求：
-
-```json
-{
-  "name": "本地开发"
-}
-```
-
-响应状态码 `201`，返回新建 Key。新密钥仅在创建响应中完整展示。
-
-`PATCH /api/keys/:id`
-
-请求：
-
-```json
-{
-  "status": "disabled"
-}
-```
-
-`status` 只能是 `active` 或 `disabled`。
-
-新建 Key 默认配置：
-
-```json
-{
-  "monthlyQuota": 50,
-  "monthlyUsed": 0,
-  "rateLimitPerMinute": 60
-}
-```
-
-`/v1/chat/completions` 会在请求上游前检查 Key 状态、月配额和 RPM 限制；成功调用后会把本次估算成本累计到 `monthlyUsed`。
-
-## 模型
-
-`GET /api/models`
-
-返回模型、供应商、上下文、价格、延迟和状态。
-
-## 渠道
-
-`GET /api/channels`
-
-返回上游渠道列表。响应中的 `maskedKey` 为脱敏密钥，不暴露真实上游密钥。
-
-`PATCH /api/channels/:id`
-
-请求：
-
-```json
-{
-  "status": "disabled"
-}
-```
-
-`status` 只能是 `active`、`degraded` 或 `disabled`。生产转发模式下，`/v1/chat/completions` 只会使用状态为 `active` 且覆盖目标模型供应商的渠道。
-
-## 用量
-
-`GET /api/usage`
-
-返回全部用量。
-
-`GET /api/usage?model=gpt-4.1-mini`
-
-按模型过滤用量。
-
-## 调用日志
-
-`GET /api/requests`
-
-返回最近 100 条调用日志，包含时间、Key 名称、脱敏 Key、模型、状态、是否流式、Token、成本和延迟。
-
-`GET /api/requests?model=gpt-4.1-mini`
-
-按模型过滤调用日志。后端最多保留最近 200 条成功中转日志，用于控制台排查和演示验收。
-
-## 账单
-
-`GET /api/billing`
-
-返回充值和调用消费记录。
-
-`POST /api/billing/recharge`
-
-请求：
-
-```json
-{
-  "amount": 200
-}
-```
-
-`amount` 必须在 `10` 到 `10000` 之间。响应状态码 `201`，返回更新后的账户和新增账单记录：
-
-```json
-{
-  "account": {
-    "balance": 328.6
-  },
-  "record": {
-    "type": "recharge",
-    "description": "账户余额充值",
-    "amount": 200,
-    "balanceAfter": 328.6
-  }
-}
-```
-
-当前交付版为演示充值闭环，不连接真实支付网关。
-
-## 文档示例
-
-`GET /api/docs/examples`
-
-返回 curl、Node.js、Python 示例代码。
-
-## OpenAI 兼容中转
-
-`POST /v1/chat/completions`
-
-请求头：
+后续管理接口请求头：
 
 ```text
-Authorization: Bearer rh_live_sk_8K2A_demo_secret
-Content-Type: application/json
+Authorization: Bearer <access_token>
 ```
 
-请求：
+`401` 响应会清理本地登录态并要求重新登录。
+
+## 管理接口
+
+本后台第一版使用以下 sub2api 管理接口：
+
+- `GET /api/v1/auth/me`
+- `GET /api/v1/admin/dashboard`
+- `GET /api/v1/admin/users`
+- `GET /api/v1/admin/api-keys`
+- `GET /api/v1/admin/accounts`
+- `GET /api/v1/admin/groups`
+- `GET /api/v1/admin/channels`
+- `GET /api/v1/admin/usage`
+- `GET /api/v1/admin/ops/request-errors`
+- `GET /api/v1/admin/payment/orders`
+- `GET /api/v1/admin/settings`
+
+列表接口按 sub2api 原生分页响应处理：
 
 ```json
 {
-  "model": "gpt-4.1-mini",
-  "stream": false,
-  "messages": [
-    { "role": "user", "content": "Hello RelayHub" }
-  ]
+  "items": [],
+  "total": 0
 }
 ```
 
-响应为 OpenAI 兼容的 `chat.completion` 结构：
+## 网关接口
+
+AI 客户端请求不经过本仓库 Node 服务，直接由 sub2api 处理。Nginx 需要代理：
+
+```text
+/v1/*
+/openai/v1/*
+/api/v1/*
+```
+
+当前 Nginx 模板覆盖 `/api/` 和 `/v1/`。如果启用 sub2api 的 `/openai/v1/*` WebSocket/Responses 路由，需要按实际域名增加对应 location。
+
+## 错误处理
+
+前端统一读取：
 
 ```json
 {
-  "id": "chatcmpl_demo",
-  "object": "chat.completion",
-  "created": 1781330000,
-  "model": "gpt-4.1-mini",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "RelayHub mock response..."
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 4,
-    "completion_tokens": 24,
-    "total_tokens": 28
+  "error": {
+    "message": "error message"
   }
 }
 ```
 
-当 `stream` 为 `true` 时，响应为 OpenAI 兼容的 data-only Server-Sent Events：
-
-```text
-Content-Type: text/event-stream
-
-data: {"id":"chatcmpl_demo","object":"chat.completion.chunk","choices":[{"delta":{"content":"..."}}]}
-
-data: [DONE]
-```
-
-流式响应同样会执行 API Key 鉴权、配额/RPM、模型和渠道校验，并在流结束前写入用量和账单记录。
-
-当前交付版支持两种模式：
-
-- 配置 `RELAY_UPSTREAM_BASE_URL` 和 `RELAY_UPSTREAM_API_KEY` 时，请求会转发到 OpenAI 兼容上游。例如 `RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1` 会请求上游 `/chat/completions`。
-- 上游返回 `text/event-stream` 时会透传 SSE 数据；未配置上游时提供稳定 mock SSE，便于 SDK 流式调用验收。
-- 真实上游模式会先检查渠道状态；如果目标模型没有启用渠道，返回 `503 channel_unavailable`，不会继续请求上游。
-- 未配置上游时，接口返回稳定 mock 响应，仍会执行 API Key 校验、模型可用性校验，并写入用量和账单记录，便于离线验收。
-
-生产启动示例：
-
-```bash
-RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
-RELAY_UPSTREAM_API_KEY=sk-your-upstream-key \
-HOST=127.0.0.1 PORT=8787 npm run server
-```
-
-常见错误：
-
-- `401 invalid_api_key`：缺少或错误的 Bearer Key。
-- `402 quota_exceeded`：Key 的月配额已耗尽。
-- `403 key_disabled`：Key 已停用。
-- `400 validation_error`：缺少 `model` / `messages`，或模型不可用。
-- `429 rate_limit_exceeded`：Key 超过每分钟请求数限制。
-- `503 channel_unavailable`：真实转发模式下没有启用的上游渠道覆盖目标模型。
-- `502 upstream_error`：上游服务异常或返回非预期响应。
+如果 sub2api 返回 `{ "message": "..." }`，前端也会显示该 message。

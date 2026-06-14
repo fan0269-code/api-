@@ -1,88 +1,134 @@
-export type ModelStatus = 'available' | 'congested' | 'maintenance';
-export type ApiKeyStatus = 'active' | 'disabled';
-export type ChannelStatus = 'active' | 'degraded' | 'disabled';
+export type AdminStatus = 'active' | 'disabled' | 'degraded' | 'maintenance' | 'paid' | 'success' | 'failed' | 'pending';
 export type ToastKind = 'success' | 'error' | 'info';
 
-export interface Account {
-  name: string;
+export interface AdminUser {
+  id: number;
   email: string;
-  plan: string;
+  username: string;
+  role: string;
+  balance?: number;
+  status?: AdminStatus | string;
+  created_at?: string;
+}
+
+export interface AdminSession {
+  access_token: string;
+  token_type?: string;
+  user: AdminUser;
+}
+
+export interface AdminDashboard {
+  today_requests: number;
+  success_rate: number;
+  active_users: number;
+  healthy_accounts: number;
+  total_accounts: number;
+  open_alerts: number;
+  balance_total: number;
+  recent_errors: RequestError[];
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+}
+
+export interface ManagedUser {
+  id: number;
+  email: string;
+  username: string;
+  role: string;
   balance: number;
-  monthlySpend: number;
-  lowBalanceThreshold: number;
+  status: string;
+  created_at: string;
 }
 
-export interface ApiKey {
-  id: string;
+export interface AdminAPIKey {
+  id: number;
   name: string;
-  maskedKey: string;
-  secret?: string;
-  status: ApiKeyStatus;
-  scopes: string[];
-  monthlyQuota: number;
-  monthlyUsed: number;
-  rateLimitPerMinute: number;
-  createdAt: string;
-  lastUsedAt: string;
+  user_email: string;
+  key_preview: string;
+  group_name: string;
+  status: string;
+  rpm_limit: number;
 }
 
-export interface ModelInfo {
-  id: string;
-  provider: string;
-  context: string;
-  inputPrice: string;
-  outputPrice: string;
-  latency: string;
-  status: ModelStatus;
-}
-
-export interface ChannelInfo {
-  id: string;
+export interface SubscriptionAccount {
+  id: number;
   name: string;
-  provider: string;
-  baseUrl: string;
-  maskedKey: string;
-  status: ChannelStatus;
-  priority: number;
-  weight: number;
-  models: string[];
-  lastCheckedAt: string;
+  platform: string;
+  account_type: string;
+  status: string;
+  group_names: string[];
+  schedulable: boolean;
 }
 
-export interface UsagePoint {
-  date: string;
-  model: string;
-  calls: number;
-  cost: number;
-  errorRate: number;
-  latencyMs: number;
+export interface DispatchGroup {
+  id: number;
+  name: string;
+  platform: string;
+  status: string;
+  rate_multiplier: number;
+  rpm: number;
+  accounts_count: number;
 }
 
-export interface RequestLog {
-  id: string;
-  timestamp: string;
-  keyName: string;
-  maskedKey: string;
+export interface AdminChannel {
+  id: number;
+  name: string;
+  platform: string;
+  status: string;
+  base_url: string;
+  models_count: number;
+}
+
+export interface UsageLog {
+  id: number;
+  user_email: string;
   model: string;
-  status: 'success' | 'error';
-  stream: boolean;
+  request_type: string;
   tokens: number;
   cost: number;
-  latencyMs: number;
+  status: string;
+  created_at: string;
 }
 
-export interface BillingRecord {
-  id: string;
-  date: string;
-  type: 'recharge' | 'usage';
-  description: string;
+export interface RequestError {
+  id: number;
+  request_id: string;
+  status_code: number;
+  message: string;
+  model: string;
+  created_at: string;
+}
+
+export interface PaymentOrder {
+  id: number;
+  user_email: string;
   amount: number;
-  balanceAfter: number;
+  status: string;
+  provider: string;
+  created_at: string;
 }
 
-export interface DocsExample {
-  language: 'curl' | 'Node.js' | 'Python';
-  code: string;
+export interface SystemSettings {
+  version: string;
+  run_mode: string;
+  gateway_base_url: string;
+  backup_enabled: boolean;
+}
+
+export interface AdminConsoleData {
+  dashboard: AdminDashboard;
+  users: Paginated<ManagedUser>;
+  apiKeys: Paginated<AdminAPIKey>;
+  accounts: Paginated<SubscriptionAccount>;
+  groups: Paginated<DispatchGroup>;
+  channels: Paginated<AdminChannel>;
+  usage: Paginated<UsageLog>;
+  requestErrors: Paginated<RequestError>;
+  paymentOrders: Paginated<PaymentOrder>;
+  settings: SystemSettings;
 }
 
 export interface ToastMessage {

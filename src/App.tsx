@@ -1,35 +1,27 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
-import { useMemo, useState } from 'react';
-import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, RequestLog, ToastMessage, UsagePoint } from './types';
+import { useState } from 'react';
+import type { AdminConsoleData, AdminUser, ToastMessage } from './types';
 import { Shell } from './components/Shell';
 import { LoginPage } from './pages/LoginPage';
-import { OverviewPage } from './pages/OverviewPage';
-import { ApiKeysPage } from './pages/ApiKeysPage';
-import { ModelsPage } from './pages/ModelsPage';
-import { UsagePage } from './pages/UsagePage';
-import { RequestsPage } from './pages/RequestsPage';
-import { BillingPage } from './pages/BillingPage';
-import { DocsPage } from './pages/DocsPage';
-import { ChannelsPage } from './pages/ChannelsPage';
 import { ToastStack } from './components/ui';
-import { HomePage } from './pages/HomePage';
-import { api } from './api/client';
-
-interface ConsoleState {
-  account: Account;
-  keys: ApiKey[];
-  models: ModelInfo[];
-  channels: ChannelInfo[];
-  usageSeries: UsagePoint[];
-  requestLogs: RequestLog[];
-  billingRecords: BillingRecord[];
-  docsExamples: DocsExample[];
-}
+import {
+  AccountsPage,
+  AlertsPage,
+  ApiKeysPage,
+  ChannelsPage,
+  GroupsPage,
+  OrdersPage,
+  OverviewPage,
+  SettingsPage,
+  UsagePage,
+  UsersPage
+} from './pages/AdminPages';
+import { adminApi } from './api/client';
 
 export default function App() {
   const navigate = useNavigate();
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [consoleState, setConsoleState] = useState<ConsoleState | null>(null);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [consoleData, setConsoleData] = useState<AdminConsoleData | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const pushToast = (kind: ToastMessage['kind'], text: string) => {
@@ -40,121 +32,45 @@ export default function App() {
     }, 2600);
   };
 
-  const activeKey = useMemo(() => consoleState?.keys.find((key) => key.status === 'active') ?? consoleState?.keys[0], [consoleState]);
-
-  const login = async (identifier: string, password: string) => {
-    const session = await api.login(identifier, password);
-    const data = await api.loadConsoleData(session.account);
-    setConsoleState(data);
-    setIsAuthed(true);
+  const login = async (email: string, password: string) => {
+    const session = await adminApi.login(email, password);
+    const data = await adminApi.loadAdminConsoleData();
+    setAdminUser(session.user);
+    setConsoleData(data);
+    pushToast('success', '管理员已登录');
     navigate('/overview');
   };
 
   const logout = () => {
-    setIsAuthed(false);
-    setConsoleState(null);
+    adminApi.logout();
+    setAdminUser(null);
+    setConsoleData(null);
     navigate('/login');
   };
 
-  const createKey = async (name: string) => {
-    const key = await api.createKey(name);
-    setConsoleState((current) => (current ? { ...current, keys: [key, ...current.keys] } : current));
-    return key;
-  };
-
-  const updateKeyStatus = async (id: string, status: ApiKey['status']) => {
-    const key = await api.updateKeyStatus(id, status);
-    setConsoleState((current) =>
-      current ? { ...current, keys: current.keys.map((item) => (item.id === key.id ? key : item)) } : current
-    );
-    return key;
-  };
-
-  const updateChannelStatus = async (id: string, status: ChannelInfo['status']) => {
-    const channel = await api.updateChannelStatus(id, status);
-    setConsoleState((current) =>
-      current ? { ...current, channels: current.channels.map((item) => (item.id === channel.id ? channel : item)) } : current
-    );
-    return channel;
-  };
-
-  const rechargeBalance = async (amount: number) => {
-    const result = await api.rechargeBalance(amount);
-    setConsoleState((current) =>
-      current
-        ? {
-            ...current,
-            account: result.account,
-            billingRecords: [result.record, ...current.billingRecords]
-          }
-        : current
-    );
-    return result;
-  };
+  const isReady = adminUser && consoleData;
 
   return (
     <>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to={isReady ? '/overview' : '/login'} replace />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
         <Route
           path="/*"
           element={
-            isAuthed && consoleState && activeKey ? (
-              <Shell account={consoleState.account} onLogout={logout}>
+            isReady ? (
+              <Shell user={adminUser} onLogout={logout}>
                 <Routes>
-                  <Route
-                    path="/overview"
-                    element={
-                      <OverviewPage
-                        account={consoleState.account}
-                        activeKey={activeKey}
-                        billingRecords={consoleState.billingRecords}
-                        models={consoleState.models}
-                        usageSeries={consoleState.usageSeries}
-                        pushToast={pushToast}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/keys"
-                    element={
-                      <ApiKeysPage
-                        keys={consoleState.keys}
-                        createKey={createKey}
-                        updateKeyStatus={updateKeyStatus}
-                        pushToast={pushToast}
-                      />
-                    }
-                  />
-                  <Route path="/models" element={<ModelsPage models={consoleState.models} pushToast={pushToast} />} />
-                  <Route
-                    path="/channels"
-                    element={
-                      <ChannelsPage
-                        channels={consoleState.channels}
-                        updateChannelStatus={updateChannelStatus}
-                        pushToast={pushToast}
-                      />
-                    }
-                  />
-                  <Route path="/usage" element={<UsagePage models={consoleState.models} usageSeries={consoleState.usageSeries} />} />
-                  <Route
-                    path="/requests"
-                    element={<RequestsPage models={consoleState.models} requestLogs={consoleState.requestLogs} />}
-                  />
-                  <Route
-                    path="/billing"
-                    element={
-                      <BillingPage
-                        account={consoleState.account}
-                        billingRecords={consoleState.billingRecords}
-                        rechargeBalance={rechargeBalance}
-                        pushToast={pushToast}
-                      />
-                    }
-                  />
-                  <Route path="/docs" element={<DocsPage docsExamples={consoleState.docsExamples} pushToast={pushToast} />} />
+                  <Route path="/overview" element={<OverviewPage data={consoleData} />} />
+                  <Route path="/users" element={<UsersPage users={consoleData.users.items} />} />
+                  <Route path="/keys" element={<ApiKeysPage keys={consoleData.apiKeys.items} />} />
+                  <Route path="/accounts" element={<AccountsPage accounts={consoleData.accounts.items} />} />
+                  <Route path="/groups" element={<GroupsPage groups={consoleData.groups.items} />} />
+                  <Route path="/channels" element={<ChannelsPage channels={consoleData.channels.items} />} />
+                  <Route path="/usage" element={<UsagePage usage={consoleData.usage.items} />} />
+                  <Route path="/alerts" element={<AlertsPage errors={consoleData.requestErrors.items} />} />
+                  <Route path="/orders" element={<OrdersPage orders={consoleData.paymentOrders.items} />} />
+                  <Route path="/settings" element={<SettingsPage settings={consoleData.settings} />} />
                   <Route path="*" element={<Navigate to="/overview" replace />} />
                 </Routes>
               </Shell>

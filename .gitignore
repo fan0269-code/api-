@@ -3,6 +3,10 @@ node_modules/
 dist/
 release/
 server/data/
+deploy/tencent-cloud/.env
+deploy/tencent-cloud/data/
+deploy/tencent-cloud/postgres_data/
+deploy/tencent-cloud/redis_data/
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js

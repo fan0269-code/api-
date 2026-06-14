@@ -1,19 +1,37 @@
-import type { Account, ApiKey, BillingRecord, ChannelInfo, DocsExample, ModelInfo, RequestLog, UsagePoint } from '../types';
+import type {
+  AdminAPIKey,
+  AdminChannel,
+  AdminConsoleData,
+  AdminDashboard,
+  AdminSession,
+  DispatchGroup,
+  ManagedUser,
+  Paginated,
+  PaymentOrder,
+  RequestError,
+  SubscriptionAccount,
+  SystemSettings,
+  UsageLog
+} from '../types';
 
-export const relayBaseUrl = 'https://api.relayhub.dev/v1';
+const tokenStorageKey = 'sub2api_admin_token';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
-export interface ConsoleData {
-  account: Account;
-  keys: ApiKey[];
-  models: ModelInfo[];
-  channels: ChannelInfo[];
-  usageSeries: UsagePoint[];
-  requestLogs: RequestLog[];
-  billingRecords: BillingRecord[];
-  docsExamples: DocsExample[];
+let adminToken = typeof localStorage === 'undefined' ? '' : localStorage.getItem(tokenStorageKey) || '';
+
+function endpoint(path: string) {
+  return `${apiBaseUrl}${path}`;
 }
 
-let consoleSessionToken = '';
+export function setAdminSession(token: string) {
+  adminToken = token;
+  localStorage.setItem(tokenStorageKey, token);
+}
+
+export function clearAdminSession() {
+  adminToken = '';
+  localStorage.removeItem(tokenStorageKey);
+}
 
 async function request<T>(path: string, options?: RequestInit & { auth?: boolean }): Promise<T> {
   const { auth = true, ...fetchOptions } = options ?? {};
@@ -21,76 +39,106 @@ async function request<T>(path: string, options?: RequestInit & { auth?: boolean
     'content-type': 'application/json',
     ...((fetchOptions.headers as Record<string, string> | undefined) ?? {})
   };
-  if (auth && consoleSessionToken) {
-    headers.authorization = `Bearer ${consoleSessionToken}`;
+
+  if (auth && adminToken) {
+    headers.authorization = `Bearer ${adminToken}`;
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(endpoint(path), {
     ...fetchOptions,
     headers
   });
 
-  const payload = await response.json();
+  const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const message = payload?.error?.message ?? '请求失败';
+    if (response.status === 401) {
+      clearAdminSession();
+    }
+    const message = payload?.error?.message ?? payload?.message ?? '请求失败';
     throw new Error(message);
   }
 
   return payload as T;
 }
 
-export const api = {
-  async login(identifier: string, password: string) {
-    const session = await request<{ token: string; account: Account }>('/api/auth/login', {
+function list<T>(path: string) {
+  return request<Paginated<T>>(path);
+}
+
+export const adminApi = {
+  async login(email: string, password: string) {
+    const session = await request<AdminSession>('/auth/login', {
       auth: false,
       method: 'POST',
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({ email, identifier: email, password })
     });
-    consoleSessionToken = session.token;
+    setAdminSession(session.access_token);
     return session;
   },
 
-  async loadConsoleData(account?: Account): Promise<ConsoleData> {
-    const [loadedAccount, keys, models, channels, usageSeries, requestLogs, billingRecords, docsExamples] = await Promise.all([
-      account ? Promise.resolve(account) : request<Account>('/api/account'),
-      request<ApiKey[]>('/api/keys'),
-      request<ModelInfo[]>('/api/models'),
-      request<ChannelInfo[]>('/api/channels'),
-      request<UsagePoint[]>('/api/usage'),
-      request<RequestLog[]>('/api/requests'),
-      request<BillingRecord[]>('/api/billing'),
-      request<DocsExample[]>('/api/docs/examples')
+  getMe() {
+    return request<{ user: AdminSession['user'] }>('/auth/me');
+  },
+
+  getDashboard() {
+    return request<AdminDashboard>('/admin/dashboard');
+  },
+
+  getUsers() {
+    return list<ManagedUser>('/admin/users');
+  },
+
+  getApiKeys() {
+    return list<AdminAPIKey>('/admin/api-keys');
+  },
+
+  getAccounts() {
+    return list<SubscriptionAccount>('/admin/accounts');
+  },
+
+  getGroups() {
+    return list<DispatchGroup>('/admin/groups');
+  },
+
+  getChannels() {
+    return list<AdminChannel>('/admin/channels');
+  },
+
+  getUsage() {
+    return list<UsageLog>('/admin/usage');
+  },
+
+  getRequestErrors() {
+    return list<RequestError>('/admin/ops/request-errors');
+  },
+
+  getPaymentOrders() {
+    return list<PaymentOrder>('/admin/payment/orders');
+  },
+
+  getSettings() {
+    return request<SystemSettings>('/admin/settings');
+  },
+
+  async loadAdminConsoleData(): Promise<AdminConsoleData> {
+    const [dashboard, users, apiKeys, accounts, groups, channels, usage, requestErrors, paymentOrders, settings] = await Promise.all([
+      this.getDashboard(),
+      this.getUsers(),
+      this.getApiKeys(),
+      this.getAccounts(),
+      this.getGroups(),
+      this.getChannels(),
+      this.getUsage(),
+      this.getRequestErrors(),
+      this.getPaymentOrders(),
+      this.getSettings()
     ]);
 
-    return { account: loadedAccount, keys, models, channels, usageSeries, requestLogs, billingRecords, docsExamples };
+    return { dashboard, users, apiKeys, accounts, groups, channels, usage, requestErrors, paymentOrders, settings };
   },
 
-  createKey(name: string) {
-    return request<ApiKey>('/api/keys', {
-      method: 'POST',
-      body: JSON.stringify({ name })
-    });
-  },
-
-  updateKeyStatus(id: string, status: ApiKey['status']) {
-    return request<ApiKey>(`/api/keys/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status })
-    });
-  },
-
-  updateChannelStatus(id: string, status: ChannelInfo['status']) {
-    return request<ChannelInfo>(`/api/channels/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status })
-    });
-  },
-
-  rechargeBalance(amount: number) {
-    return request<{ account: Account; record: BillingRecord }>('/api/billing/recharge', {
-      method: 'POST',
-      body: JSON.stringify({ amount })
-    });
+  logout() {
+    clearAdminSession();
   }
 };

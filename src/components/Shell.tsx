@@ -1,28 +1,43 @@
-import { BarChart3, BookOpen, CreditCard, KeyRound, ListChecks, LogOut, Network, PanelsTopLeft, RadioTower } from 'lucide-react';
+import {
+  AlertTriangle,
+  BarChart3,
+  CreditCard,
+  KeyRound,
+  Layers3,
+  LogOut,
+  Network,
+  PanelsTopLeft,
+  RadioTower,
+  Settings,
+  UsersRound,
+  WalletCards
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router';
-import type { Account } from '../types';
+import type { AdminUser } from '../types';
 
 const navItems = [
-  { to: '/overview', label: '总览', icon: PanelsTopLeft },
-  { to: '/keys', label: 'API Keys', icon: KeyRound },
-  { to: '/models', label: '模型接口', icon: Network },
-  { to: '/channels', label: '渠道管理', icon: RadioTower },
-  { to: '/usage', label: '用量统计', icon: BarChart3 },
-  { to: '/requests', label: '调用日志', icon: ListChecks },
-  { to: '/billing', label: '账单余额', icon: CreditCard },
-  { to: '/docs', label: '接入文档', icon: BookOpen }
+  { to: '/overview', label: '运营总览', icon: PanelsTopLeft },
+  { to: '/users', label: '用户管理', icon: UsersRound },
+  { to: '/keys', label: 'API Key 管理', icon: KeyRound },
+  { to: '/accounts', label: '订阅账户池', icon: WalletCards },
+  { to: '/groups', label: '分组调度', icon: Layers3 },
+  { to: '/channels', label: '模型渠道', icon: RadioTower },
+  { to: '/usage', label: '调用日志', icon: BarChart3 },
+  { to: '/alerts', label: '告警任务', icon: AlertTriangle },
+  { to: '/orders', label: '订单余额', icon: CreditCard },
+  { to: '/settings', label: '系统设置', icon: Settings }
 ];
 
-export function Shell({ account, children, onLogout }: { account: Account; children: ReactNode; onLogout: () => void }) {
+export function Shell({ user, children, onLogout }: { user: AdminUser; children: ReactNode; onLogout: () => void }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">R</div>
+          <div className="brand-mark">S</div>
           <div>
-            <strong>RelayHub</strong>
-            <span>API 中转站</span>
+            <strong>sub2api Admin</strong>
+            <span>订阅 API 网关后台</span>
           </div>
         </div>
         <nav className="nav-list" aria-label="主导航">
@@ -40,12 +55,13 @@ export function Shell({ account, children, onLogout }: { account: Account; child
       <main className="main-area">
         <header className="topbar">
           <div>
-            <span className="eyebrow">Developer Console</span>
-            <h1>API 中转控制台</h1>
+            <span className="eyebrow">Operations Console</span>
+            <h1>sub2api 管理后台</h1>
           </div>
           <div className="account-pill">
-            <span>{account.name}</span>
-            <strong>余额 ¥{account.balance.toFixed(2)}</strong>
+            <Network size={16} />
+            <span>{user.username || user.email}</span>
+            <strong>{user.role}</strong>
             <button className="icon-text-button" onClick={onLogout}>
               <LogOut size={16} />
               退出

@@ -1,106 +1,84 @@
-# RelayHub API 中转站
+# sub2api 管理后台
 
-RelayHub 是一个可交付的 API 中转站网站，包含公开官网首页、登录后的开发者控制台和 Node.js 后端 API。公开首页参考 AICodeMirror 的产品官网框架组织内容，控制台提供 API Key、模型、渠道、用量、账单和接入文档等核心页面。
+这是一个面向运营管理员的 sub2api 定制管理后台。前端使用 React + Vite + TypeScript，后端能力由 sub2api 官方 Docker 镜像提供，生产部署使用 PostgreSQL、Redis 和 Nginx。
 
-## 页面入口
+## 功能范围
 
-- `/`：公开官网首页，包含卖点、模型支持、价格方案和企业信任背书。
-- `/login`：登录/注册入口。
-- `/overview`：登录后的控制台总览。
-- `/keys`：API Key 管理，包含状态、权限、月配额、已用额度和 RPM 限制。
-- `/models`：模型接口与价格状态。
-- `/channels`：上游渠道管理，可查看供应商、Base URL、权重、模型覆盖并启用/停用渠道。
-- `/usage`：用量统计。
-- `/requests`：调用日志，按模型查看最近请求、Key、流式模式、Token、成本和延迟。
-- `/billing`：账单余额，支持演示充值并生成交易记录。
-- `/docs`：接入文档和示例代码。
-- `/v1/chat/completions`：OpenAI 兼容中转接口，支持非流式和流式真实上游转发；未配置上游时默认 mock 响应并记录用量。
+- `/login`：sub2api 管理员登录，使用 `/api/v1/auth/login` 获取 JWT。
+- `/overview`：运营总览，请求量、成功率、活跃用户、账户池健康、余额和告警。
+- `/users`：用户管理，查看用户、余额、角色和状态。
+- `/keys`：API Key 管理，按用户和分组查看 Key、状态和 RPM。
+- `/accounts`：订阅账户池，查看平台、账户类型、分组和调度状态。
+- `/groups`：分组调度，查看倍率、RPM、账户数量和状态。
+- `/channels`：模型渠道，查看平台、Base URL、模型数量和状态。
+- `/usage`：调用日志，查看用户、模型、请求类型、Token、成本和状态。
+- `/alerts`：告警任务，查看请求错误和上游异常。
+- `/orders`：订单余额，查看支付订单、金额、渠道和状态。
+- `/settings`：系统设置，查看版本、运行模式、网关入口和备份状态。
 
-## 本地运行
+## 本地开发
 
-启动后端 API：
+前端开发服务器会把 `/api` 和 `/v1` 代理到本地 sub2api：
 
 ```bash
 npm install
-npm run dev:api
-```
-
-如需转发真实模型，在启动后端前配置 OpenAI 兼容上游：
-
-```bash
-export RELAY_UPSTREAM_BASE_URL="https://api.openai.com/v1"
-export RELAY_UPSTREAM_API_KEY="sk-your-upstream-key"
-npm run dev:api
-```
-
-另一个终端启动前端：
-
-```bash
 npm run dev:web -- --host 127.0.0.1
+```
+
+另起终端启动 sub2api：
+
+```bash
+cd deploy/tencent-cloud
+cp .env.example .env
+# 编辑 .env，填写 ADMIN_PASSWORD、JWT_SECRET、TOTP_ENCRYPTION_KEY 等
+docker compose --env-file .env up -d
 ```
 
 访问：
 
 ```text
-http://127.0.0.1:5173/
+http://127.0.0.1:5173/login
 ```
 
 ## 验收命令
 
 ```bash
 npm run verify
-npm run preview:prod
 npm run package:delivery
 ```
 
-`npm run verify` 会执行测试和生产构建，`npm run preview:prod` 用 `dist/` 进行本地生产预览。`npm run package:delivery` 会生成可移交的压缩包：
+`npm run verify` 会执行前端测试和生产构建。`npm run package:delivery` 会重新执行验证，并生成交付包：
 
 ```text
-release/relayhub-api-relay-console.tar.gz
+release/sub2api-admin-console.tar.gz
 ```
 
-## 部署到腾讯云 CVM
+## 腾讯云部署
 
-先在本地构建并通过 SSH/rsync 上传到服务器：
-
-```bash
-export DEPLOY_HOST="your.server.ip"
-export DEPLOY_USER="ubuntu"
-export DEPLOY_PATH="/var/www/api-relay-console"
-export DEPLOY_KEY="$HOME/.ssh/tencent-cloud.pem"
-
-npm run deploy:tencent
-```
-
-如果 SSH key 已经加入 `ssh-agent`，可以不设置 `DEPLOY_KEY`。
-
-也可以复制模板后按实际服务器修改：
-
-```bash
-cp deploy/tencent-cloud/.env.example deploy/tencent-cloud/.env.local
-```
-
-Nginx 配置模板在：
+部署资产在：
 
 ```text
-deploy/tencent-cloud/nginx-api-relay-console.conf
+deploy/tencent-cloud/
 ```
 
-详细部署说明见：
+核心文件：
 
-```text
-deploy/tencent-cloud/README.md
-```
+- `docker-compose.yml`：sub2api、PostgreSQL、Redis。
+- `.env.example`：生产环境变量模板。
+- `nginx-api-relay-console.conf`：静态前端和 `/api`、`/v1` 反向代理。
+- `deploy.sh`：本地构建并上传到腾讯云 CVM。
+
+详细说明见 [腾讯云部署文档](deploy/tencent-cloud/README.md)。
 
 ## 技术文档
 
-- [API 文档](docs/API.md)
+- [API 对接说明](docs/API.md)
 - [架构说明](docs/ARCHITECTURE.md)
+- [交付说明](docs/DELIVERY.md)
 
 ## 当前边界
 
-- 当前版本包含前端和后端 API，后端使用 JSON 文件保存演示数据。
-- OpenAI 兼容中转接口已具备 Key 鉴权、配额/RPM 限制、模型校验、渠道可用性校验、真实上游转发、SSE 流式透传、mock 兜底、用量、账单和调用日志记录。
-- 控制台管理接口已具备 Bearer 会话 token 鉴权，生产部署建议设置 `RELAY_ADMIN_TOKEN`。
-- 登录是演示登录，尚未接入真实用户体系、密码哈希和权限审计。
-- 当前充值为演示余额充值闭环；真实支付网关、发票和生产级密钥加密存储需要继续接入外部服务。
+- 后端主链路已切换为 sub2api；本仓库不再提供 Node mock API 作为生产后端。
+- 第一版只做管理员后台，不包含用户自助注册、用户充值中心和公开营销官网。
+- 生产环境必须设置固定 `JWT_SECRET` 和 `TOTP_ENCRYPTION_KEY`，否则重启会影响登录会话和 2FA。
+- sub2api 账号池和上游配置涉及第三方服务条款，部署方需要自行确认合规性。

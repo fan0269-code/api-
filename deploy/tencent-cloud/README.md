@@ -1,25 +1,46 @@
-# Tencent Cloud Deployment
+# Tencent Cloud Docker Compose Deployment
 
-This app is a static Vite build. Deploy the `dist/` directory to a Tencent Cloud CVM instance and serve it with Nginx.
+This deployment runs the React admin console as static files and uses sub2api as the production backend.
 
-## Prerequisites
+## Runtime Topology
 
-- A Tencent Cloud CVM instance with SSH access.
-- Nginx installed on the server.
-- Node.js 22+ installed on the server for the API process.
-- A server directory for the site, for example `/var/www/api-relay-console`.
-- Optional: a domain name pointing to the server IP.
+- Nginx serves `dist/`.
+- Nginx proxies `/api/` and `/v1/` to `sub2api:8080` on localhost.
+- Docker Compose runs `sub2api`, `postgres`, and `redis`.
+- Data persists in local directories: `data/`, `postgres_data/`, and `redis_data/`.
 
-## Build Locally
+## Prepare CVM
+
+Install Docker, Docker Compose v2, and Nginx on the Tencent Cloud CVM.
 
 ```bash
-npm install
-npm run build
+sudo mkdir -p /var/www/api-relay-console
+sudo chown -R "$USER:$USER" /var/www/api-relay-console
 ```
 
-## Deploy With Rsync
+## Configure Secrets
 
-Set the deployment variables and run the script:
+```bash
+cd /var/www/api-relay-console
+cp .env.example .env
+```
+
+Edit `.env` and set strong values for:
+
+- `POSTGRES_PASSWORD`
+- `REDIS_PASSWORD`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `JWT_SECRET`
+- `TOTP_ENCRYPTION_KEY`
+
+Generate random secrets:
+
+```bash
+openssl rand -hex 32
+```
+
+## Deploy From Local Machine
 
 ```bash
 export DEPLOY_HOST="your.server.ip"
@@ -27,70 +48,59 @@ export DEPLOY_USER="ubuntu"
 export DEPLOY_PATH="/var/www/api-relay-console"
 export DEPLOY_KEY="$HOME/.ssh/tencent-cloud.pem"
 
-./deploy/tencent-cloud/deploy.sh
-```
-
-If your SSH key is already loaded in `ssh-agent`, omit `DEPLOY_KEY`.
-
-You can also copy the environment template:
-
-```bash
-cp deploy/tencent-cloud/.env.example deploy/tencent-cloud/.env.local
-```
-
-Then load it before deploying:
-
-```bash
-set -a
-source deploy/tencent-cloud/.env.local
-set +a
 npm run deploy:tencent
 ```
 
-## Start Backend API
-
-The deploy script uploads `server/` and `package.json` with the static `dist/` files. Start the API process on the server:
+Then copy and edit env on the server:
 
 ```bash
+scp deploy/tencent-cloud/.env.example "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/.env"
+ssh "$DEPLOY_USER@$DEPLOY_HOST"
 cd /var/www/api-relay-console
-RELAY_ADMIN_TOKEN=replace-with-a-long-random-console-token \
-HOST=127.0.0.1 PORT=8787 npm run server
+vim .env
+docker compose --env-file .env up -d
 ```
-
-To forward real model calls through `/v1/chat/completions`, provide an OpenAI-compatible upstream:
-
-```bash
-cd /var/www/api-relay-console
-RELAY_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
-RELAY_UPSTREAM_API_KEY=sk-your-upstream-key \
-RELAY_ADMIN_TOKEN=replace-with-a-long-random-console-token \
-HOST=127.0.0.1 PORT=8787 npm run server
-```
-
-If these two variables are not set, the backend uses the built-in mock response mode and still records usage for demo validation.
-If `RELAY_ADMIN_TOKEN` is not set, the backend falls back to the demo console token. Set it in production.
-
-For production, run this command under a process manager such as systemd or pm2.
 
 ## Configure Nginx
 
-Copy `nginx-api-relay-console.conf` to the server and adjust:
-
-- `server_name` to your domain or server IP.
-- `root` to match `DEPLOY_PATH`.
-- `proxy_pass` port to match the API `PORT` if you changed it.
-- Keep both `/api/` and `/v1/` proxied to the Node service. `/api/` powers the console, while `/v1/` is the OpenAI-compatible client endpoint.
-
-Then enable and reload Nginx:
-
 ```bash
-sudo cp nginx-api-relay-console.conf /etc/nginx/conf.d/api-relay-console.conf
+sudo cp /var/www/api-relay-console/nginx-api-relay-console.conf /etc/nginx/conf.d/api-relay-console.conf
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## Notes
+The config includes `underscores_in_headers on;`, which sub2api needs for clients that send headers such as `session_id`.
 
-- The app uses client-side routing, so the Nginx config includes `try_files $uri $uri/ /index.html`.
-- The API persists demo data in `server/data/db.json` on first start. Back up this file if you keep demo state between deployments.
-- Keep `RELAY_UPSTREAM_API_KEY` in the process manager environment, not in the browser build or committed files.
+## Verify
+
+```bash
+docker compose --env-file .env ps
+docker compose --env-file .env logs -f sub2api
+curl http://127.0.0.1:8080/health
+```
+
+Open the public domain or CVM IP in a browser and log in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+## Backup And Migration
+
+Stop services before copying data:
+
+```bash
+docker compose --env-file .env down
+tar czf sub2api-backup.tgz data postgres_data redis_data .env docker-compose.yml
+```
+
+Restore on another server by extracting the archive into the same deploy directory and running:
+
+```bash
+docker compose --env-file .env up -d
+```
+
+## Upgrade
+
+```bash
+docker compose --env-file .env pull
+docker compose --env-file .env up -d
+```
+
+The React admin console can be upgraded independently by replacing `dist/` and reloading Nginx.
