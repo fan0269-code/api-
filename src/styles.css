@@ -376,6 +376,12 @@ pre {
   gap: 8px;
 }
 
+.table-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .field-error,
 .warning {
   color: #b91c1c;

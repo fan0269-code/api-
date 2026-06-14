@@ -80,6 +80,27 @@ export default function App() {
     pushToast('success', 'API Key 分组已更新');
   };
 
+  const setAccountSchedulable = async (accountId: number, schedulable: boolean) => {
+    const account = await adminApi.setAccountSchedulable(accountId, schedulable);
+    setConsoleData((current) =>
+      current
+        ? {
+            ...current,
+            accounts: {
+              ...current.accounts,
+              items: current.accounts.items.map((item) => (item.id === account.id ? { ...item, ...account } : item))
+            }
+          }
+        : current
+    );
+    pushToast('success', schedulable ? '账户已恢复调度' : '账户已暂停调度');
+  };
+
+  const testAccount = async (accountId: number) => {
+    await adminApi.testAccount(accountId);
+    pushToast('success', '账户测试已发起');
+  };
+
   const isReady = adminUser && consoleData;
 
   return (
@@ -96,7 +117,7 @@ export default function App() {
                   <Route path="/overview" element={<OverviewPage data={consoleData} />} />
                   <Route path="/users" element={<UsersPage users={consoleData.users.items} onAdjustBalance={adjustUserBalance} />} />
                   <Route path="/keys" element={<ApiKeysPage keys={consoleData.apiKeys.items} groups={consoleData.groups.items} onUpdateGroup={updateApiKeyGroup} />} />
-                  <Route path="/accounts" element={<AccountsPage accounts={consoleData.accounts.items} />} />
+                  <Route path="/accounts" element={<AccountsPage accounts={consoleData.accounts.items} onSetSchedulable={setAccountSchedulable} onTestAccount={testAccount} />} />
                   <Route path="/groups" element={<GroupsPage groups={consoleData.groups.items} />} />
                   <Route path="/channels" element={<ChannelsPage channels={consoleData.channels.items} />} />
                   <Route path="/usage" element={<UsagePage usage={consoleData.usage.items} />} />

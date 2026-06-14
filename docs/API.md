@@ -66,6 +66,8 @@ Authorization: Bearer <access_token>
 
 - `POST /api/v1/admin/users/:id/balance`：管理员调整用户余额，支持 `set`、`add`、`subtract`。
 - `PUT /api/v1/admin/api-keys/:id`：管理员绑定/解绑 API Key 分组，可同时重置限速用量。
+- `POST /api/v1/admin/accounts/:id/schedulable`：暂停或恢复订阅账户调度。
+- `POST /api/v1/admin/accounts/:id/test`：发起订阅账户连通性测试。
 
 接口按 sub2api 标准响应包装处理，前端兼容 `{data: ...}` 与分页数据：
 

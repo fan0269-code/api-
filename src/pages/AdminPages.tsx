@@ -228,19 +228,58 @@ export function ApiKeysPage({
   );
 }
 
-export function AccountsPage({ accounts }: { accounts: SubscriptionAccount[] }) {
+export function AccountsPage({
+  accounts,
+  onSetSchedulable,
+  onTestAccount
+}: {
+  accounts: SubscriptionAccount[];
+  onSetSchedulable: (accountId: number, schedulable: boolean) => Promise<void>;
+  onTestAccount: (accountId: number) => Promise<void>;
+}) {
+  const [busyAccountId, setBusyAccountId] = useState<number | null>(null);
+
+  const runAccountAction = async (accountId: number, action: () => Promise<void>) => {
+    setBusyAccountId(accountId);
+    try {
+      await action();
+    } finally {
+      setBusyAccountId(null);
+    }
+  };
+
   return (
     <AdminTable
       title="订阅账户池"
       eyebrow="Subscription Accounts"
-      columns={['账户', '平台', '类型', '分组', '调度', '状态']}
+      columns={['账户', '平台', '类型', '分组', '调度', '状态', '操作']}
       rows={accounts.map((account) => [
         <strong>{account.name}</strong>,
         account.platform,
         account.account_type,
         account.group_names.join(' / '),
         account.schedulable ? '可调度' : '暂停',
-        <StatusCell status={account.status} />
+        <StatusCell status={account.status} />,
+        <div className="table-actions">
+          <button
+            className="button-secondary"
+            type="button"
+            disabled={busyAccountId === account.id}
+            onClick={() => runAccountAction(account.id, () => onSetSchedulable(account.id, !account.schedulable))}
+            aria-label={`${account.schedulable ? '暂停' : '恢复'} ${account.name} 调度`}
+          >
+            {account.schedulable ? '暂停调度' : '恢复调度'}
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            disabled={busyAccountId === account.id}
+            onClick={() => runAccountAction(account.id, () => onTestAccount(account.id))}
+            aria-label={`测试 ${account.name}`}
+          >
+            测试
+          </button>
+        </div>
       ])}
     />
   );

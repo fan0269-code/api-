@@ -241,6 +241,21 @@ export const adminApi = {
     return list<SubscriptionAccount>('/admin/accounts');
   },
 
+  async setAccountSchedulable(accountId: number, schedulable: boolean) {
+    const payload = await request<unknown>(`/admin/accounts/${accountId}/schedulable`, {
+      method: 'POST',
+      body: JSON.stringify({ schedulable })
+    });
+    return unwrapPayload(payload) as SubscriptionAccount;
+  },
+
+  async testAccount(accountId: number) {
+    return request<unknown>(`/admin/accounts/${accountId}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ mode: 'quick' })
+    });
+  },
+
   getGroups() {
     return list<DispatchGroup>('/admin/groups');
   },

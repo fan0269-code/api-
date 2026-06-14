@@ -140,6 +140,24 @@ beforeEach(() => {
         });
       }
 
+      if (method === 'POST' && url.pathname === '/api/v1/admin/accounts/7/schedulable') {
+        return jsonResponse({
+          data: {
+            id: 7,
+            name: 'Claude Team 01',
+            platform: 'anthropic',
+            account_type: 'oauth',
+            status: 'active',
+            group_names: ['Claude 高并发'],
+            schedulable: false
+          }
+        });
+      }
+
+      if (method === 'POST' && url.pathname === '/api/v1/admin/accounts/7/test') {
+        return jsonResponse({ data: { status: 'accepted' } });
+      }
+
       return jsonResponse({ error: { message: `unhandled ${method} ${url.pathname}` } }, 404);
     })
   );
@@ -265,6 +283,45 @@ describe('sub2api admin shell', () => {
         })
       )
     );
+  });
+
+  it('operates subscription accounts through sub2api account actions', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
+    await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
+
+    await userEvent.click(await screen.findByRole('link', { name: '订阅账户池' }));
+    await userEvent.click(screen.getByRole('button', { name: '暂停 Claude Team 01 调度' }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/admin/accounts/7/schedulable',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ schedulable: false })
+        })
+      )
+    );
+    expect(await screen.findByText('暂停')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '测试 Claude Team 01' }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/admin/accounts/7/test',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ mode: 'quick' })
+        })
+      )
+    );
+    expect(await screen.findByText('账户测试已发起')).toBeInTheDocument();
   });
 });
 
