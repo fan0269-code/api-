@@ -101,6 +101,22 @@ export default function App() {
     pushToast('success', '账户测试已发起');
   };
 
+  const updateChannelStatus = async (channelId: number, status: 'active' | 'disabled') => {
+    const channel = await adminApi.updateChannelStatus(channelId, status);
+    setConsoleData((current) =>
+      current
+        ? {
+            ...current,
+            channels: {
+              ...current.channels,
+              items: current.channels.items.map((item) => (item.id === channel.id ? { ...item, ...channel } : item))
+            }
+          }
+        : current
+    );
+    pushToast('success', status === 'active' ? '渠道已启用' : '渠道已停用');
+  };
+
   const isReady = adminUser && consoleData;
 
   return (
@@ -119,7 +135,7 @@ export default function App() {
                   <Route path="/keys" element={<ApiKeysPage keys={consoleData.apiKeys.items} groups={consoleData.groups.items} onUpdateGroup={updateApiKeyGroup} />} />
                   <Route path="/accounts" element={<AccountsPage accounts={consoleData.accounts.items} onSetSchedulable={setAccountSchedulable} onTestAccount={testAccount} />} />
                   <Route path="/groups" element={<GroupsPage groups={consoleData.groups.items} />} />
-                  <Route path="/channels" element={<ChannelsPage channels={consoleData.channels.items} />} />
+                  <Route path="/channels" element={<ChannelsPage channels={consoleData.channels.items} onUpdateStatus={updateChannelStatus} />} />
                   <Route path="/usage" element={<UsagePage usage={consoleData.usage.items} />} />
                   <Route path="/alerts" element={<AlertsPage errors={consoleData.requestErrors.items} />} />
                   <Route path="/orders" element={<OrdersPage orders={consoleData.paymentOrders.items} />} />

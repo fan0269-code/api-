@@ -264,6 +264,14 @@ export const adminApi = {
     return list<AdminChannel>('/admin/channels');
   },
 
+  async updateChannelStatus(channelId: number, status: 'active' | 'disabled') {
+    const payload = await request<unknown>(`/admin/channels/${channelId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    });
+    return unwrapPayload(payload) as AdminChannel;
+  },
+
   getUsage() {
     return list<UsageLog>('/admin/usage');
   },

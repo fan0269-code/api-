@@ -303,19 +303,43 @@ export function GroupsPage({ groups }: { groups: DispatchGroup[] }) {
   );
 }
 
-export function ChannelsPage({ channels }: { channels: AdminChannel[] }) {
+export function ChannelsPage({ channels, onUpdateStatus }: { channels: AdminChannel[]; onUpdateStatus: (channelId: number, status: 'active' | 'disabled') => Promise<void> }) {
+  const [busyChannelId, setBusyChannelId] = useState<number | null>(null);
+
+  const runChannelAction = async (channelId: number, status: 'active' | 'disabled') => {
+    setBusyChannelId(channelId);
+    try {
+      await onUpdateStatus(channelId, status);
+    } finally {
+      setBusyChannelId(null);
+    }
+  };
+
   return (
     <AdminTable
       title="模型渠道"
       eyebrow="Models & Channels"
-      columns={['渠道', '平台', 'Base URL', '模型数', '状态']}
-      rows={channels.map((channel) => [
-        <strong>{channel.name}</strong>,
-        channel.platform,
-        <code>{channel.base_url}</code>,
-        channel.models_count.toLocaleString(),
-        <StatusCell status={channel.status} />
-      ])}
+      columns={['渠道', '平台', 'Base URL', '模型数', '状态', '操作']}
+      rows={channels.map((channel) => {
+        const nextStatus = channel.status === 'active' ? 'disabled' : 'active';
+        const actionText = channel.status === 'active' ? '停用' : '启用';
+        return [
+          <strong>{channel.name}</strong>,
+          channel.platform,
+          <code>{channel.base_url}</code>,
+          channel.models_count.toLocaleString(),
+          <StatusCell status={channel.status} />,
+          <button
+            className="button-secondary"
+            type="button"
+            disabled={busyChannelId === channel.id}
+            onClick={() => runChannelAction(channel.id, nextStatus)}
+            aria-label={`${actionText} ${channel.name} 渠道`}
+          >
+            {actionText}
+          </button>
+        ];
+      })}
     />
   );
 }

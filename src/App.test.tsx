@@ -158,6 +158,19 @@ beforeEach(() => {
         return jsonResponse({ data: { status: 'accepted' } });
       }
 
+      if (method === 'PUT' && url.pathname === '/api/v1/admin/channels/9') {
+        return jsonResponse({
+          data: {
+            id: 9,
+            name: 'OpenAI Responses',
+            platform: 'openai',
+            status: 'disabled',
+            base_url: 'https://api.openai.com',
+            models_count: 24
+          }
+        });
+      }
+
       return jsonResponse({ error: { message: `unhandled ${method} ${url.pathname}` } }, 404);
     })
   );
@@ -322,6 +335,33 @@ describe('sub2api admin shell', () => {
       )
     );
     expect(await screen.findByText('账户测试已发起')).toBeInTheDocument();
+  });
+
+  it('toggles model channel status through sub2api channel APIs', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
+    await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
+
+    await userEvent.click(await screen.findByRole('link', { name: '模型渠道' }));
+    await userEvent.click(screen.getByRole('button', { name: '停用 OpenAI Responses 渠道' }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/admin/channels/9',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ status: 'disabled' })
+        })
+      )
+    );
+    expect(await screen.findByText('渠道已停用')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('停用')).toBeInTheDocument();
   });
 });
 
