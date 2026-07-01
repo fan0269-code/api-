@@ -1,0 +1,38 @@
+name: Deploy to Tencent Cloud
+
+on:
+  push:
+    branches:
+      - codex/api-relay-console
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+      - run: npm run verify
+
+      - name: Deploy to CVM
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "mkdir -p '${{ secrets.DEPLOY_PATH }}/dist' '${{ secrets.DEPLOY_PATH }}/tencent-cloud'"
+
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key" dist/ \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/dist/"
+
+          rsync -az -e "ssh -i ~/.ssh/deploy_key" \
+            deploy/tencent-cloud/docker-compose.yml \
+            deploy/tencent-cloud/nginx-api-relay-console.conf \
+            deploy/tencent-cloud/.env.example \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/tencent-cloud/"
