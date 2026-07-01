@@ -26,6 +26,7 @@ export default function App() {
   const [consoleData, setConsoleData] = useState<AdminConsoleData | null>(null);
   const [pendingCompliance, setPendingCompliance] = useState<AdminComplianceStatus | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const demoLoadingRef = useRef(false);
 
   const pushToast = (kind: ToastMessage['kind'], text: string) => {
@@ -37,6 +38,7 @@ export default function App() {
   };
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true);
     const session = await adminApi.login(email, password);
     setAdminUser(session.user);
     setPendingCompliance(null);
@@ -49,13 +51,16 @@ export default function App() {
         const status = await adminApi.getAdminComplianceStatus();
         setConsoleData(null);
         setPendingCompliance(status);
+        setIsLoading(false);
         navigate('/compliance');
         return;
       }
+      setIsLoading(false);
       throw error;
     }
 
     setConsoleData(data);
+    setIsLoading(false);
     pushToast('success', '管理员已登录');
     navigate('/overview');
   };
@@ -191,6 +196,16 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Navigate to={isReady ? '/overview' : '/login'} replace />} />
+        {isLoading ? (
+          <Route path="*" element={
+            <main className="login-page">
+              <div className="login-panel" style={{textAlign:'center'}}>
+                <h2>正在加载管理数据...</h2>
+                <p className="muted">请稍候，正在连接 sub2api 后端</p>
+              </div>
+            </main>
+          } />
+        ) : null}
         <Route
           path="/login"
           element={

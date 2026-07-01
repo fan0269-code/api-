@@ -251,6 +251,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     expect(await screen.findByRole('heading', { name: '运营总览' })).toBeInTheDocument();
@@ -276,6 +277,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     expect(await screen.findByText('上线前合规确认')).toBeInTheDocument();
@@ -309,6 +311,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     await userEvent.click(await screen.findByRole('link', { name: '账户池' }));
@@ -334,6 +337,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     await userEvent.click(await screen.findByRole('link', { name: '用户管理' }));
@@ -362,6 +366,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     await userEvent.click(await screen.findByRole('link', { name: '用户管理' }));
@@ -407,6 +412,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     await userEvent.click(await screen.findByRole('link', { name: '账户池' }));
@@ -446,6 +452,7 @@ describe('sub2api admin shell', () => {
 
     await userEvent.type(screen.getByLabelText('管理员邮箱'), 'admin@sub2api.local');
     await userEvent.type(screen.getByLabelText('管理员密码'), 'change-me');
+    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: '登录管理员后台' }));
 
     await userEvent.click(await screen.findByRole('link', { name: '模型' }));

@@ -1,6 +1,6 @@
 import { AlertTriangle, Activity, CheckCircle2, Database, RadioTower, UsersRound, WalletCards } from 'lucide-react';
 import { FormEvent, useState, type ReactNode } from 'react';
-import { MetricCard, Modal, SectionHeader, StatusBadge } from '../components/ui';
+import { EmptyState, MetricCard, Modal, SectionHeader, StatusBadge } from '../components/ui';
 import type {
   AdminAPIKey,
   AdminChannel,
@@ -398,26 +398,30 @@ function AdminTable({ title, columns, rows }: { title: string; columns: string[]
   return (
     <section className="page-grid">
       <SectionHeader title={title} />
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}>
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex}>{cell}</td>
+      {rows.length === 0 ? (
+        <EmptyState title="暂无数据" description="当前没有可显示的数据记录" />
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column}>{column}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

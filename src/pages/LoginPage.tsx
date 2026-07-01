@@ -4,18 +4,20 @@ import type { ReactNode } from 'react';
 export function LoginPage({ onLogin, demoAction }: { onLogin: (email: string, password: string) => Promise<void>; demoAction?: ReactNode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string; submit?: string }>({});
+  const [agreed, setAgreed] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; terms?: string; submit?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const nextErrors = {
       email: email.trim() ? undefined : '请输入管理员邮箱',
-      password: password.trim() ? undefined : '请输入管理员密码'
+      password: password.trim() ? undefined : '请输入管理员密码',
+      terms: agreed ? undefined : '请先同意服务条款'
     };
     setErrors(nextErrors);
 
-    if (nextErrors.email || nextErrors.password) {
+    if (nextErrors.email || nextErrors.password || nextErrors.terms) {
       return;
     }
 
@@ -62,16 +64,17 @@ export function LoginPage({ onLogin, demoAction }: { onLogin: (email: string, pa
           {errors.password ? <span className="field-error">{errors.password}</span> : null}
         </div>
         <label className="checkbox-field login-terms" htmlFor="login-terms">
-          <input id="login-terms" type="checkbox" defaultChecked />
-          我已阅读并同意《服务条款》和《隐私政策》
+          <input id="login-terms" type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
+          我已阅读并同意服务条款和隐私政策
         </label>
+        {errors.terms ? <span className="field-error">{errors.terms}</span> : null}
         {errors.submit ? <span className="field-error">{errors.submit}</span> : null}
         <button className="button-primary" type="submit" disabled={isSubmitting} aria-label="登录管理员后台">
           {isSubmitting ? '登录中...' : '登录'}
         </button>
         {demoAction}
       </form>
-      <footer className="login-legal">继续即表示您同意我们的 隐私政策 和 服务条款</footer>
+      <footer className="login-legal">智链 AI · sub2api 运营管理平台</footer>
     </main>
   );
 }
