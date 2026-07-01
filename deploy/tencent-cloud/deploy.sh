@@ -18,7 +18,7 @@ if [[ -n "${DEPLOY_KEY:-}" ]]; then
   SSH_ARGS=(-i "$DEPLOY_KEY")
 fi
 
-ssh "${SSH_ARGS[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/dist' '$DEPLOY_PATH/tencent-cloud'"
+ssh "${SSH_ARGS[@]:-}" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/dist' '$DEPLOY_PATH/tencent-cloud'"
 rsync -az --delete -e "ssh ${SSH_ARGS[*]}" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/dist/"
 rsync -az -e "ssh ${SSH_ARGS[*]}" deploy/tencent-cloud/docker-compose.yml deploy/tencent-cloud/nginx-api-relay-console.conf deploy/tencent-cloud/.env.example "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/tencent-cloud/"
 rsync -az -e "ssh ${SSH_ARGS[*]}" README.md "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
