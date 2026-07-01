@@ -18,9 +18,10 @@
 1. 管理员访问 `/login`。
 2. 前端调用 `POST /api/v1/auth/login` 获取 sub2api JWT。
 3. 前端保存 token，并读取 dashboard stats/realtime、users、accounts、groups、group api-keys、channels、usage、ops、payment、settings。
-4. 管理页面以表格和指标卡展示 sub2api 数据。
-5. AI 客户端调用 `/v1/*`、`/v1beta/*`、`/responses`、`/backend-api/*` 等网关路径，Nginx 直接代理到 sub2api。
-6. sub2api 负责账户池调度、并发控制、限流、计费、用量日志和上游转发。
+4. 如果后端返回 `423` 合规确认要求，前端进入 `/compliance`，管理员手动输入确认短语后再重新读取管理数据。
+5. 管理页面以表格和指标卡展示 sub2api 数据。
+6. AI 客户端调用 `/v1/*`、`/v1beta/*`、`/responses`、`/backend-api/*` 等网关路径，Nginx 直接代理到 sub2api。
+7. sub2api 负责账户池调度、并发控制、限流、计费、用量日志和上游转发。
 
 ## 部署拓扑
 
@@ -29,7 +30,7 @@ Browser
   |
   v
 Nginx :80
-  |-- /           -> dist/
+  |-- /           -> /var/www/api-relay-console/dist/
   |-- /api/      -> 127.0.0.1:8080 sub2api
   |-- /v1/       -> 127.0.0.1:8080 sub2api
   |-- /v1beta/   -> 127.0.0.1:8080 sub2api
@@ -49,7 +50,9 @@ Docker Compose
 - `JWT_SECRET` 和 `TOTP_ENCRYPTION_KEY` 必须固定，避免重启后会话和 2FA 失效。
 - Nginx 对网关路径关闭 proxy buffering，并提高 read timeout，支持流式响应。
 - Nginx 启用 `underscores_in_headers on;`，兼容 sub2api 粘性会话相关 header。
+- Nginx 静态根目录只指向 `dist/`，部署配置、`.env` 和运行数据目录不暴露到公网静态文件服务。
 - 前端遇到 `401` 会清除 token，避免过期态继续访问管理接口。
+- 前端遇到 `423` 会进入管理员合规确认页，不会自动代替管理员提交确认。
 
 ## 边界
 

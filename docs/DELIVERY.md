@@ -18,7 +18,7 @@ npm run package:delivery
 ## 服务器初始化
 
 ```bash
-cd /var/www/api-relay-console
+cd /var/www/api-relay-console/tencent-cloud
 cp .env.example .env
 vim .env
 docker compose --env-file .env up -d
@@ -31,6 +31,8 @@ docker compose --env-file .env up -d
 - `ADMIN_PASSWORD`
 - `JWT_SECRET`
 - `TOTP_ENCRYPTION_KEY`
+
+Nginx 的站点根目录应指向 `/var/www/api-relay-console/dist`，不要把 `.env`、`docker-compose.yml` 或运行数据目录放进公网静态根目录。
 
 ## Git 上传
 

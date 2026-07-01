@@ -46,7 +46,12 @@ await mkdir(join(packageRoot, 'docs'), { recursive: true });
 copy('docs/API.md', join(packageRoot, 'docs', 'API.md'));
 copy('docs/ARCHITECTURE.md', join(packageRoot, 'docs', 'ARCHITECTURE.md'));
 copy('docs/DELIVERY.md', join(packageRoot, 'docs', 'DELIVERY.md'));
-copy('deploy/tencent-cloud', join(packageRoot, 'tencent-cloud'));
+await mkdir(join(packageRoot, 'tencent-cloud'), { recursive: true });
+copy('deploy/tencent-cloud/README.md', join(packageRoot, 'tencent-cloud', 'README.md'));
+copy('deploy/tencent-cloud/deploy.sh', join(packageRoot, 'tencent-cloud', 'deploy.sh'));
+copy('deploy/tencent-cloud/docker-compose.yml', join(packageRoot, 'tencent-cloud', 'docker-compose.yml'));
+copy('deploy/tencent-cloud/nginx-api-relay-console.conf', join(packageRoot, 'tencent-cloud', 'nginx-api-relay-console.conf'));
+copy('deploy/tencent-cloud/.env.example', join(packageRoot, 'tencent-cloud', '.env.example'));
 
 await writeFile(
   join(packageRoot, 'DELIVERY.md'),
@@ -66,8 +71,8 @@ This package contains the React admin console build and Tencent Cloud Docker Com
 
 1. Copy tencent-cloud/.env.example to tencent-cloud/.env and fill in strong secrets.
 2. Upload this package to /var/www/api-relay-console on the Tencent Cloud CVM.
-3. Run: docker compose --env-file .env up -d
-4. Copy nginx-api-relay-console.conf to /etc/nginx/conf.d/ and reload Nginx.
+3. Run: cd /var/www/api-relay-console/tencent-cloud && docker compose --env-file .env up -d
+4. Copy tencent-cloud/nginx-api-relay-console.conf to /etc/nginx/conf.d/ and reload Nginx. The Nginx root must point to /var/www/api-relay-console/dist.
 5. Open the domain and log in with ADMIN_EMAIL / ADMIN_PASSWORD.
 `,
   'utf8'
@@ -82,6 +87,24 @@ const tar = spawnSync('tar', ['-czf', archivePath, '-C', releaseDir, 'sub2api-ad
 
 if (tar.status !== 0) {
   throw new Error('Failed to create delivery archive');
+}
+
+const listing = spawnSync('tar', ['-tzf', archivePath], {
+  cwd: root,
+  encoding: 'utf8'
+});
+
+if (listing.status !== 0) {
+  throw new Error('Failed to inspect delivery archive');
+}
+
+const forbiddenArchiveEntries = listing.stdout
+  .split('\n')
+  .filter(Boolean)
+  .filter((entry) => /(^|\/)(\.env$|data\/|postgres_data\/|redis_data\/|logs\/|config\.ya?ml$)/.test(entry));
+
+if (forbiddenArchiveEntries.length > 0) {
+  throw new Error(`Delivery archive contains local runtime files:\n${forbiddenArchiveEntries.join('\n')}`);
 }
 
 console.log(`Created ${archivePath}`);

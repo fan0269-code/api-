@@ -17,16 +17,16 @@ import { NavLink } from 'react-router';
 import type { AdminUser } from '../types';
 
 const navItems = [
-  { to: '/overview', label: '运营总览', icon: PanelsTopLeft },
+  { to: '/overview', label: '总览', icon: PanelsTopLeft },
   { to: '/users', label: '用户管理', icon: UsersRound },
-  { to: '/keys', label: 'API Key 管理', icon: KeyRound },
-  { to: '/accounts', label: '订阅账户池', icon: WalletCards },
+  { to: '/keys', label: 'API 密钥', icon: KeyRound },
+  { to: '/accounts', label: '账户池', icon: WalletCards },
   { to: '/groups', label: '分组调度', icon: Layers3 },
-  { to: '/channels', label: '模型渠道', icon: RadioTower },
-  { to: '/usage', label: '调用日志', icon: BarChart3 },
-  { to: '/alerts', label: '告警任务', icon: AlertTriangle },
-  { to: '/orders', label: '订单余额', icon: CreditCard },
-  { to: '/settings', label: '系统设置', icon: Settings }
+  { to: '/channels', label: '模型', icon: RadioTower },
+  { to: '/usage', label: '日志', icon: BarChart3 },
+  { to: '/alerts', label: '状态', icon: AlertTriangle },
+  { to: '/orders', label: '钱包', icon: CreditCard },
+  { to: '/settings', label: '设置', icon: Settings }
 ];
 
 export function Shell({ user, children, onLogout }: { user: AdminUser; children: ReactNode; onLogout: () => void }) {
@@ -36,8 +36,8 @@ export function Shell({ user, children, onLogout }: { user: AdminUser; children:
         <div className="brand">
           <div className="brand-mark">S</div>
           <div>
-            <strong>sub2api Admin</strong>
-            <span>订阅 API 网关后台</span>
+            <strong>智链 AI</strong>
+            <span>sub2api 运营控制台</span>
           </div>
         </div>
         <nav className="nav-list" aria-label="主导航">
@@ -55,8 +55,7 @@ export function Shell({ user, children, onLogout }: { user: AdminUser; children:
       <main className="main-area">
         <header className="topbar">
           <div>
-            <span className="eyebrow">Operations Console</span>
-            <h1>sub2api 管理后台</h1>
+            <h1>智链 AI 管理后台</h1>
           </div>
           <div className="account-pill">
             <Network size={16} />

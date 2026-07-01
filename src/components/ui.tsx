@@ -17,7 +17,6 @@ export function SectionHeader({ eyebrow, title, action }: { eyebrow?: string; ti
   return (
     <div className="section-header">
       <div>
-        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
         <h2>{title}</h2>
       </div>
       {action}

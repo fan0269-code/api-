@@ -45,11 +45,30 @@ Authorization: Bearer <access_token>
 
 `401` 响应会清理本地登录态并要求重新登录。
 
+## 合规确认
+
+新的 sub2api 管理员后端可能在首次读取管理数据时返回 `423`，提示需要完成管理员合规确认。前端会读取：
+
+- `GET /api/v1/admin/compliance`
+- `POST /api/v1/admin/compliance/accept`
+
+确认接口请求体：
+
+```json
+{
+  "phrase": "我已阅读、理解并同意 Sub2API 部署与运营合规承诺",
+  "language": "zh"
+}
+```
+
+确认短语必须由管理员手动输入，前端不会自动代签。
+
 ## 管理接口
 
 本后台第一版使用以下 sub2api 管理接口：
 
 - `GET /api/v1/auth/me`
+- `GET /api/v1/admin/compliance`
 - `GET /api/v1/admin/dashboard/stats`
 - `GET /api/v1/admin/dashboard/realtime`
 - `GET /api/v1/admin/users`
@@ -68,6 +87,7 @@ Authorization: Bearer <access_token>
 - `PUT /api/v1/admin/api-keys/:id`：管理员绑定/解绑 API Key 分组，可同时重置限速用量。
 - `POST /api/v1/admin/accounts/:id/schedulable`：暂停或恢复订阅账户调度。
 - `POST /api/v1/admin/accounts/:id/test`：发起订阅账户连通性测试。
+- `POST /api/v1/admin/compliance/accept`：记录管理员合规确认。
 - `PUT /api/v1/admin/channels/:id`：启用或停用模型渠道。
 
 接口按 sub2api 标准响应包装处理，前端兼容 `{data: ...}` 与分页数据：
@@ -117,3 +137,5 @@ AI 客户端请求不经过本仓库 Node 服务，直接由 sub2api 处理。Ng
 ```
 
 如果 sub2api 返回 `{ "message": "..." }`，前端也会显示该 message。
+
+如果 sub2api 返回 `423` 且要求合规确认，前端会进入 `/compliance`，完成确认后重新读取后台数据。

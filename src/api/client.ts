@@ -1,6 +1,7 @@
 import type {
   AdminAPIKey,
   AdminChannel,
+  AdminComplianceStatus,
   AdminConsoleData,
   AdminDashboard,
   AdminSession,
@@ -20,6 +21,18 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 let adminToken = typeof localStorage === 'undefined' ? '' : localStorage.getItem(tokenStorageKey) || '';
 
 type APIRecord = Record<string, unknown>;
+
+export class AdminApiError extends Error {
+  status: number;
+  payload: unknown;
+
+  constructor(message: string, status: number, payload: unknown) {
+    super(message);
+    this.name = 'AdminApiError';
+    this.status = status;
+    this.payload = payload;
+  }
+}
 
 function endpoint(path: string) {
   return `${apiBaseUrl}${path}`;
@@ -58,7 +71,7 @@ async function request<T>(path: string, options?: RequestInit & { auth?: boolean
       clearAdminSession();
     }
     const message = payload?.error?.message ?? payload?.message ?? '请求失败';
-    throw new Error(message);
+    throw new AdminApiError(message, response.status, payload);
   }
 
   return payload as T;
@@ -190,6 +203,19 @@ export const adminApi = {
   async getMe() {
     const payload = await request<unknown>('/auth/me');
     return unwrapPayload(payload) as { user: AdminSession['user'] };
+  },
+
+  async getAdminComplianceStatus() {
+    const payload = await request<unknown>('/admin/compliance');
+    return unwrapPayload(payload) as AdminComplianceStatus;
+  },
+
+  async acceptAdminCompliance(phrase: string, language = 'zh') {
+    const payload = await request<unknown>('/admin/compliance/accept', {
+      method: 'POST',
+      body: JSON.stringify({ phrase, language })
+    });
+    return unwrapPayload(payload) as AdminComplianceStatus;
   },
 
   async getDashboard(requestErrors?: Paginated<RequestError>) {

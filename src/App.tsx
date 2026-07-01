@@ -1,8 +1,9 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { AdminConsoleData, AdminUser, ToastMessage } from './types';
 import { Shell } from './components/Shell';
 import { LoginPage } from './pages/LoginPage';
+import { CompliancePage } from './pages/CompliancePage';
 import { ToastStack } from './components/ui';
 import {
   AccountsPage,
@@ -16,13 +17,16 @@ import {
   UsagePage,
   UsersPage
 } from './pages/AdminPages';
-import { adminApi } from './api/client';
+import { AdminApiError, adminApi } from './api/client';
+import type { AdminComplianceStatus } from './types';
 
 export default function App() {
   const navigate = useNavigate();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [consoleData, setConsoleData] = useState<AdminConsoleData | null>(null);
+  const [pendingCompliance, setPendingCompliance] = useState<AdminComplianceStatus | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const demoLoadingRef = useRef(false);
 
   const pushToast = (kind: ToastMessage['kind'], text: string) => {
     const toast = { id: `${Date.now()}-${Math.random()}`, kind, text };
@@ -34,10 +38,53 @@ export default function App() {
 
   const login = async (email: string, password: string) => {
     const session = await adminApi.login(email, password);
-    const data = await adminApi.loadAdminConsoleData();
     setAdminUser(session.user);
+    setPendingCompliance(null);
+
+    let data: AdminConsoleData;
+    try {
+      data = await adminApi.loadAdminConsoleData();
+    } catch (error) {
+      if (error instanceof AdminApiError && error.status === 423) {
+        const status = await adminApi.getAdminComplianceStatus();
+        setConsoleData(null);
+        setPendingCompliance(status);
+        navigate('/compliance');
+        return;
+      }
+      throw error;
+    }
+
     setConsoleData(data);
     pushToast('success', '管理员已登录');
+    navigate('/overview');
+  };
+
+  const openDemoConsole = async () => {
+    if (demoLoadingRef.current) return;
+    demoLoadingRef.current = true;
+    try {
+      const { demoAdminSession, demoConsoleData } = await import('./data/demoAdmin');
+      setAdminUser(demoAdminSession.user);
+      setConsoleData(demoConsoleData);
+      setPendingCompliance(null);
+      pushToast('info', '已进入本地演示后台');
+      navigate('/overview');
+    } finally {
+      demoLoadingRef.current = false;
+    }
+  };
+
+  const acceptCompliance = async (phrase: string, language: string) => {
+    const status = await adminApi.acceptAdminCompliance(phrase, language);
+    if (status.required) {
+      setPendingCompliance(status);
+      throw new Error('后端仍要求完成合规确认');
+    }
+    const data = await adminApi.loadAdminConsoleData();
+    setConsoleData(data);
+    setPendingCompliance(null);
+    pushToast('success', '合规确认已记录');
     navigate('/overview');
   };
 
@@ -45,76 +92,97 @@ export default function App() {
     adminApi.logout();
     setAdminUser(null);
     setConsoleData(null);
+    setPendingCompliance(null);
     navigate('/login');
   };
 
   const adjustUserBalance = async (userId: number, amount: number, operation: 'set' | 'add' | 'subtract', notes: string) => {
-    const user = await adminApi.updateUserBalance(userId, { balance: amount, operation, notes });
-    setConsoleData((current) =>
-      current
-        ? {
-            ...current,
-            users: {
-              ...current.users,
-              items: current.users.items.map((item) => (item.id === user.id ? { ...item, ...user } : item))
+    try {
+      const user = await adminApi.updateUserBalance(userId, { balance: amount, operation, notes });
+      setConsoleData((current) =>
+        current
+          ? {
+              ...current,
+              users: {
+                ...current.users,
+                items: current.users.items.map((item) => (item.id === user.id ? { ...item, ...user } : item))
+              }
             }
-          }
-        : current
-    );
-    pushToast('success', '用户余额已更新');
+          : current
+      );
+      pushToast('success', '用户余额已更新');
+    } catch (error) {
+      pushToast('error', error instanceof Error ? error.message : '余额调整失败');
+    }
   };
 
   const updateApiKeyGroup = async (keyId: number, groupId: number | null, resetUsage: boolean) => {
-    const apiKey = await adminApi.updateApiKeyGroup(keyId, { group_id: groupId, reset_rate_limit_usage: resetUsage });
-    setConsoleData((current) =>
-      current
-        ? {
-            ...current,
-            apiKeys: {
-              ...current.apiKeys,
-              items: current.apiKeys.items.map((item) => (item.id === apiKey.id ? { ...item, ...apiKey } : item))
+    try {
+      const apiKey = await adminApi.updateApiKeyGroup(keyId, { group_id: groupId, reset_rate_limit_usage: resetUsage });
+      setConsoleData((current) =>
+        current
+          ? {
+              ...current,
+              apiKeys: {
+                ...current.apiKeys,
+                items: current.apiKeys.items.map((item) => (item.id === apiKey.id ? { ...item, ...apiKey } : item))
+              }
             }
-          }
-        : current
-    );
-    pushToast('success', 'API Key 分组已更新');
+          : current
+      );
+      pushToast('success', 'API Key 分组已更新');
+    } catch (error) {
+      pushToast('error', error instanceof Error ? error.message : '分组更新失败');
+    }
   };
 
   const setAccountSchedulable = async (accountId: number, schedulable: boolean) => {
-    const account = await adminApi.setAccountSchedulable(accountId, schedulable);
-    setConsoleData((current) =>
-      current
-        ? {
-            ...current,
-            accounts: {
-              ...current.accounts,
-              items: current.accounts.items.map((item) => (item.id === account.id ? { ...item, ...account } : item))
+    try {
+      const account = await adminApi.setAccountSchedulable(accountId, schedulable);
+      setConsoleData((current) =>
+        current
+          ? {
+              ...current,
+              accounts: {
+                ...current.accounts,
+                items: current.accounts.items.map((item) => (item.id === account.id ? { ...item, ...account } : item))
+              }
             }
-          }
-        : current
-    );
-    pushToast('success', schedulable ? '账户已恢复调度' : '账户已暂停调度');
+          : current
+      );
+      pushToast('success', schedulable ? '账户已恢复调度' : '账户已暂停调度');
+    } catch (error) {
+      pushToast('error', error instanceof Error ? error.message : '调度操作失败');
+    }
   };
 
   const testAccount = async (accountId: number) => {
-    await adminApi.testAccount(accountId);
-    pushToast('success', '账户测试已发起');
+    try {
+      await adminApi.testAccount(accountId);
+      pushToast('success', '账户测试已发起');
+    } catch (error) {
+      pushToast('error', error instanceof Error ? error.message : '账户测试失败');
+    }
   };
 
   const updateChannelStatus = async (channelId: number, status: 'active' | 'disabled') => {
-    const channel = await adminApi.updateChannelStatus(channelId, status);
-    setConsoleData((current) =>
-      current
-        ? {
-            ...current,
-            channels: {
-              ...current.channels,
-              items: current.channels.items.map((item) => (item.id === channel.id ? { ...item, ...channel } : item))
+    try {
+      const channel = await adminApi.updateChannelStatus(channelId, status);
+      setConsoleData((current) =>
+        current
+          ? {
+              ...current,
+              channels: {
+                ...current.channels,
+                items: current.channels.items.map((item) => (item.id === channel.id ? { ...item, ...channel } : item))
+              }
             }
-          }
-        : current
-    );
-    pushToast('success', status === 'active' ? '渠道已启用' : '渠道已停用');
+          : current
+      );
+      pushToast('success', status === 'active' ? '渠道已启用' : '渠道已停用');
+    } catch (error) {
+      pushToast('error', error instanceof Error ? error.message : '渠道状态更新失败');
+    }
   };
 
   const isReady = adminUser && consoleData;
@@ -123,7 +191,33 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Navigate to={isReady ? '/overview' : '/login'} replace />} />
-        <Route path="/login" element={<LoginPage onLogin={login} />} />
+        <Route
+          path="/login"
+          element={
+            <LoginPage
+              onLogin={login}
+              demoAction={
+                import.meta.env.DEV ? (
+                  <button className="button-secondary login-demo" type="button" onClick={openDemoConsole}>
+                    查看演示后台
+                  </button>
+                ) : undefined
+              }
+            />
+          }
+        />
+        <Route
+          path="/compliance"
+          element={
+            adminUser && pendingCompliance ? (
+              <CompliancePage status={pendingCompliance} onAccept={acceptCompliance} onLogout={logout} />
+            ) : adminUser && consoleData ? (
+              <Navigate to="/overview" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route
           path="/*"
           element={

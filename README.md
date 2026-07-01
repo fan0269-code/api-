@@ -5,6 +5,7 @@
 ## 功能范围
 
 - `/login`：sub2api 管理员登录，使用 `/api/v1/auth/login` 获取 JWT。
+- `/compliance`：真实后端要求时，管理员阅读并手动确认部署与运营合规承诺。
 - `/overview`：运营总览，请求量、成功率、活跃用户、账户池健康、余额和告警。
 - `/users`：用户管理，查看用户、余额、角色和状态。
 - `/keys`：API Key 管理，按用户和分组查看 Key、状态和 RPM。
@@ -40,6 +41,8 @@ docker compose --env-file .env up -d
 http://127.0.0.1:5173/login
 ```
 
+本地开发模式会提供演示后台入口，便于无后端时查看界面；生产构建不会显示该入口，也不会携带演示登录 token。首次连接新的 sub2api 后端时，后端可能返回合规确认要求，前端会引导管理员打开官方文档并手动输入确认短语后再进入后台。
+
 ## 验收命令
 
 ```bash
@@ -70,6 +73,8 @@ deploy/tencent-cloud/
 
 详细说明见 [腾讯云部署文档](deploy/tencent-cloud/README.md)。
 
+生产部署时，Nginx 只应暴露 `/var/www/api-relay-console/dist`；`tencent-cloud/.env`、`docker-compose.yml` 和运行数据目录必须放在静态根目录之外。
+
 ## 技术文档
 
 - [API 对接说明](docs/API.md)
@@ -79,6 +84,7 @@ deploy/tencent-cloud/
 ## 当前边界
 
 - 后端主链路已切换为 sub2api；本仓库不再提供 Node mock API 作为生产后端。
+- 演示后台仅用于本地开发，不作为生产登录方式。
 - 第一版只做管理员后台，不包含用户自助注册、用户充值中心和公开营销官网。
 - 生产环境必须设置固定 `JWT_SECRET` 和 `TOTP_ENCRYPTION_KEY`，否则重启会影响登录会话和 2FA。
 - sub2api 账号池和上游配置涉及第三方服务条款，部署方需要自行确认合规性。

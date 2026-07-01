@@ -2,6 +2,7 @@
 node_modules/
 dist/
 release/
+config/
 server/data/
 deploy/tencent-cloud/.env
 deploy/tencent-cloud/data/

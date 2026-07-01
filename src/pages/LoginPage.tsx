@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
+import type { ReactNode } from 'react';
 
-export function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => Promise<void> }) {
+export function LoginPage({ onLogin, demoAction }: { onLogin: (email: string, password: string) => Promise<void>; demoAction?: ReactNode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; submit?: string }>({});
@@ -31,34 +32,46 @@ export function LoginPage({ onLogin }: { onLogin: (email: string, password: stri
   return (
     <main className="login-page">
       <div className="animated-grid-pattern" aria-hidden="true" />
+      <header className="login-brand" aria-label="智链 AI">
+        <span className="brand-star">S</span>
+        <strong>智链 AI</strong>
+      </header>
       <section className="login-copy">
-        <h1>智链 AI 管理后台</h1>
-        <p>基于 sub2api 的订阅账户池、分组调度、调用日志和订单余额运营后台。</p>
+        <h1>
+          智链 AI，统一调度
+          <span>{`{ 订阅账户池 + 分组路由 + 调用审计 }`}</span>
+        </h1>
+        <p>面向运营管理员的 sub2api 控制台，集中管理订阅账户池、模型渠道、API 密钥、调用日志和订单余额。</p>
         <div className="login-value-grid">
-          <span>账户池管理</span>
-          <span>分组调度</span>
+          <span>稳定网关</span>
+          <span>模型路由</span>
           <span>调用审计</span>
-          <span>Docker 交付</span>
+          <span>余额运营</span>
         </div>
       </section>
       <form className="login-panel magic-panel" onSubmit={submit}>
-        <span className="eyebrow">Admin Only</span>
-        <h2>登录管理员后台</h2>
+        <h2>管理员登录</h2>
         <div className="form-field">
           <label htmlFor="admin-email">管理员邮箱</label>
-          <input id="admin-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input id="admin-email" type="email" value={email} placeholder="请输入你的用户名或邮箱地址" onChange={(event) => setEmail(event.target.value)} />
           {errors.email ? <span className="field-error">{errors.email}</span> : null}
         </div>
         <div className="form-field">
           <label htmlFor="admin-password">管理员密码</label>
-          <input id="admin-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input id="admin-password" type="password" value={password} placeholder="请输入你的密码" onChange={(event) => setPassword(event.target.value)} />
           {errors.password ? <span className="field-error">{errors.password}</span> : null}
         </div>
+        <label className="checkbox-field login-terms" htmlFor="login-terms">
+          <input id="login-terms" type="checkbox" defaultChecked />
+          我已阅读并同意《服务条款》和《隐私政策》
+        </label>
         {errors.submit ? <span className="field-error">{errors.submit}</span> : null}
-        <button className="button-primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? '登录中...' : '登录管理员后台'}
+        <button className="button-primary" type="submit" disabled={isSubmitting} aria-label="登录管理员后台">
+          {isSubmitting ? '登录中...' : '登录'}
         </button>
+        {demoAction}
       </form>
+      <footer className="login-legal">继续即表示您同意我们的 隐私政策 和 服务条款</footer>
     </main>
   );
 }
